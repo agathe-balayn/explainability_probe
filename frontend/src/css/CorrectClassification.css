@@ -1,0 +1,36 @@
+#correct-photos {
+    display: flex;
+    text-align: center;
+    padding-top: 1rem;
+    width: 80%;
+    float: top;
+}
+
+.saliency {
+    flex-wrap: wrap;
+    display: inline-block;
+    flex: 1 30%;
+}
+#left-text {
+    width: max-content;
+    /*display: flex;*/
+    float: bottom;
+    border-right: 1px solid black;
+    padding: 10px;
+}
+#right-text {
+    width: max-content;
+    /*display: flex;*/
+    float: bottom;
+    padding: 10px;
+}
+
+#text{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#p2 {
+    color: indianred;
+    margin-left: 10px;
+}

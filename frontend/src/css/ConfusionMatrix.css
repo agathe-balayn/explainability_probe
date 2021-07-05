@@ -1,0 +1,33 @@
+table, th, td {
+    padding: 10px;
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: center
+}
+td {
+    overflow: hidden;
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+}
+.link {
+    color: black;
+}
+
+.Matrix-header {
+    width: 99%;
+    align-items: stretch;
+}
+
+th, td, .Header-cell {
+    display: table-cell;
+    width: 2%;
+}
+
+[name=td01], [name=button01] {
+    background-color: lightcoral;
+}
+
+[name=td00], [name=button00] {
+    background-color: lightgreen;
+}

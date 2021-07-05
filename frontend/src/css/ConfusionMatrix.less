@@ -1,0 +1,68 @@
+table, th, td {
+    padding: 10px;
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: center
+}
+
+td, th {
+    overflow: hidden;
+    overflow-wrap: break-word;
+    //text-overflow: ellipsis;
+    word-wrap: break-word;
+    white-space: break-spaces;
+}
+
+.link {
+    color: black;
+}
+
+th, td, .Header-cell {
+    display: table-cell;
+    width: 2%;
+}
+
+[name=td01], [name=button01] {
+    background-color: lightcoral;
+}
+
+[name=td00], [name=button00] {
+    background-color: lightgreen;
+}
+#vertical-label {
+    text-align: center;
+    writing-mode: tb-rl;
+    //float: left;
+    top: 50%;
+    display: inline-block;
+    margin-right:10px;
+}
+#horizontal-label {
+    text-align: center;
+}
+.table-label, .instructions {
+    display: flex;
+}
+.Matrix-table {
+    width: 95%;
+    align-items: stretch;
+    //float: right;
+    //margin-right: 20px;
+}
+#switch {
+    margin-left: 10px;
+    border-radius: 5px;
+    border: solid black 1px;
+}
+#switch:hover {
+    background-color: lightgray;
+}
+.diagonal-cell:not(#elem0) {
+    background-color: #6cbc6c;
+}
+td.diagonal-cell:not(#elem0) {
+    background-color: lightcoral;
+}
+td.off-diagonal:not(#elem0) {
+    background-color: lightcoral;
+}
