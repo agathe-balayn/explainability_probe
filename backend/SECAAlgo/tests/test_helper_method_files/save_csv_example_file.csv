@@ -1,0 +1,6 @@
+image_name,category,predicted
+Image_1,example_image_test,different_prediction
+Image_2,table,table
+Image_3,something_else,table
+Image_4,B-2 spirit stealth bomber,table
+Image_5,table,nuclear missile

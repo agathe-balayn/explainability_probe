@@ -1,0 +1,27 @@
+DATA_FOLDER = r'./data'
+DATA_TRAIN = f'{DATA_FOLDER}/train/'
+DATA_VAL = f'{DATA_FOLDER}/validation/'
+DATA_TEST = f'{DATA_FOLDER}/test/'
+SAVED_FOLDER = r'./saved'
+SAVED_MODELS = f'{SAVED_FOLDER}/model/'
+SAVED_LOGS = f'{SAVED_FOLDER}/log/'
+
+# DATASET_PATH = r'/Users/psoilis/Documents/TU_Delft/Thesis/Datasets'
+DATASET_PATH = r'D:/Documents/Master_Studies/TU Delft-MSc Computer Science/Thesis/Datasets'
+
+PETA = 'PETA'
+PETA_DIRS = f'{DATASET_PATH}/{PETA}/PETA dataset/'
+
+PA100K = 'PA-100K'
+PA100K_DATA = f'{DATASET_PATH}/{PA100K}/release_data/release_data'
+PA100K_DATA_TRAIN_PATH = f'{DATA_FOLDER}/pa100_train_data.npy'
+PA100K_DATA_VAL_PATH = f'{DATA_FOLDER}/pa100_val_data.npy'
+PA100K_DATA_TEST_PATH = f'{DATA_FOLDER}/pa100_test_data.npy'
+PA100K_LABELS = f'{DATASET_PATH}/{PA100K}/annotation/annotation.mat'
+PA100K_LABEL_TRAIN_PATH = f'{DATA_FOLDER}/pa100_train_labels.npy'
+PA100K_LABEL_VAL_PATH = f'{DATA_FOLDER}/pa100_val_labels.npy'
+PA100K_LABEL_TEST_PATH = f'{DATA_FOLDER}/pa100_test_labels.npy'
+
+IMAGENET2012 = 'ILSVRC2012'
+IMAGENET2012_DATA_VAL_PATH = f'{DATASET_PATH}/{IMAGENET2012}/ILSVRC2012_img_val'
+IMAGENET2012_DATA_EXPERIMENTS_PATH = f'{DATASET_PATH}/{IMAGENET2012}/ILSVRC2012_val_experiments'

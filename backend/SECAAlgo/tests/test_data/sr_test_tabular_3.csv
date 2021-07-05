@@ -1,0 +1,4 @@
+image_name,true_label,predicted_label,tv,black,buttons,joystick,keyboard,display,classification_check
+console.jpg,xbox,playstation,1,1,0,0,0,0,Misclassified
+controller.jpg,xbox,xbox,0,0,1,1,0,0,Correctly classified
+laptop.jpg,apple,dell,0,0,0,0,1,1,Misclassified

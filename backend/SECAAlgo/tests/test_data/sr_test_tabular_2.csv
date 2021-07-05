@@ -1,0 +1,2 @@
+image_name,true_label,predicted_label,curtains,window,pillow,bed,classification_check
+Places365_val_00015617.jpg,childs_room,bedroom,1,1,1,1,Misclassified
