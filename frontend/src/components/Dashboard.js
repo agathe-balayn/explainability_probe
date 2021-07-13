@@ -467,15 +467,11 @@ export default function Dashboard(props) {
             </Row>
 
             <Row>
-                <Col span={12}>
-                    <div className="quadrant">
-                        <QueryClassificationFormulas />
-                    </div>
-                </Col>
-                <Col span={12}>
-                    <div id={"quadrant3"} className="quadrant">
-                        <h1 className={"quadrantTitle"}>Query display</h1>
-                        <p>To be implemented</p>
+                <Col span={24}>
+                    <div className="py-2 pr-3">
+                        <div className="quadrant w-100">
+                            <QueryClassificationFormulas />
+                        </div>
                     </div>
                 </Col>
             </Row>
