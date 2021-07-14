@@ -11,6 +11,8 @@ class Images(models.Model):
     image_name = models.CharField(max_length=50)
     actual_image = models.CharField(max_length=100)
     predicted_image = models.CharField(max_length=100)
+    confidence = models.CharField(max_length=2000, blank=True, null=True)
+
 
 
 class Sessions(models.Model):
