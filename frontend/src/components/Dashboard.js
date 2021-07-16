@@ -171,13 +171,14 @@ export default function Dashboard(props) {
             });
     }
 
-    const fillModalData = ( heatmap, image, annotations,gt,label) => {
+    const fillModalData = ( heatmap, image, annotations,gt,label,confidence) => {
         setModalData({
             "image": image,
             "heatmap": heatmap,
             "annotations" : annotations,
             "gt": gt,
-            "label": label
+            "label": label,
+            "confidence": confidence
         });
         setShowModal(true);
     }
@@ -225,7 +226,7 @@ export default function Dashboard(props) {
                 view:
                     <>
                     {/* Image in column */}
-                    <div className="hover-click-pair" onClick={() => fillModalData(matrixImages[key]["heatmaps"][image],matrixImages[key]["images"][image], matrixImages[key]["annotations"],gt,label ) }>
+                    <div className="hover-click-pair" onClick={() => fillModalData(matrixImages[key]["heatmaps"][image],matrixImages[key]["images"][image], matrixImages[key]["annotations"],gt,label, matrixImages[key]["confidence"] ) }>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}
                             style={{"width": 100 + "px", height: 100 + "px"}}></img>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["images"][image]}
@@ -504,7 +505,7 @@ export default function Dashboard(props) {
                             <div className="d-flex">
                                 <div className="row">
                                     <div className="col-12">
-                                        <p>Classified as: {modalData["label"]}</p>
+                                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"] === null ? "unknown" :modalData["confidence"] +'%'})</p>
                                     </div>
                                     <div className="col-12">
                                         <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
