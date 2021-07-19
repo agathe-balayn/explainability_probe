@@ -1,5 +1,5 @@
 import json
-
+import re
 import numpy as np
 import pandas as pd
 from SECA_algorithm.analysis_tools import chi2_contingency, compute_cramers_v
@@ -160,9 +160,13 @@ def save_csv_predictions(input_data):
         user = SECAUser.objects.filter(user=User.objects.filter(username=username)[0])[0]
         session.users.add(user)
 
+    if "confidence" not in csv.columns:
+        csv["confidence"] = "unknown"
+
     for i in range(len(csv[csv.columns[0]])):
         image = Images(image_name=csv.loc[i, csv.columns[0]], actual_image=csv.loc[i, csv.columns[1]],
-                       predicted_image=csv.loc[i, csv.columns[2]])
+                       predicted_image=csv.loc[i, csv.columns[2]],
+                       confidence=csv.loc[i, "confidence"])
         image.save()
         session.images.add(image)
     return 'done', status.HTTP_200_OK, session.id
@@ -192,6 +196,31 @@ def link_annotations(annotation_input, session_id):
     annotations = json.loads(annotation_input)
 
     for annotation_pair in annotations:
+        # Identify how many annotations there are.
+        keys_annotation = []
+        for item in annotation_pair.keys():
+            if "object" in item:
+                temp = re.findall(r'\d+', item)
+                res = list(map(int, temp))
+                if len(res) > 0:
+                    keys_annotation.append(res[0])
+
+
+
+
+        # Run the code for each of them.
+        for item_annotation in keys_annotation:
+            if annotation_pair["object" + item_annotation + "_label"] is not None:
+                if annotation_pair["reason"] is  None:
+                    annotation_pair["reason"] = "unknown"
+                a1 = Annotations(image=Sessions.objects.filter(id=session_id)[0].images.filter(
+                        image_name=annotation_pair["image_name"])[0],
+                                    annotation=annotation_pair["object" + item_annotation + "_label"],
+                                    bounding_box_coordinates=annotation_pair["object" + item_annotation + "_bbox"],
+                                weight=annotation_pair["weight"], reason=annotation_pair["reason"])
+                a1.save()
+
+        """
         if annotation_pair["object1_label"] is not None:
             if annotation_pair["reason"] is not None:
                 a1 = Annotations(image=Sessions.objects.filter(id=session_id)[0].images.filter(
@@ -224,6 +253,7 @@ def link_annotations(annotation_input, session_id):
                                  bounding_box_coordinates=annotation_pair["object2_bbox"],
                                  weight=annotation_pair["weight"])
                 a2.save()
+            """
 
     return "saved"
 
@@ -233,7 +263,7 @@ def make_annotations(annotation):
     """
         Given a path to json file, this method reads it and returns annotation data in proper format
         Args:
-            annotatation (str): path to batch json file
+            annotation (str): path to batch json file
         Returns:
             a dictionary of annotations
     """
@@ -243,16 +273,27 @@ def make_annotations(annotation):
     res = {}
 
     for b in batch:
+        keys_annotation = []
+        for item in b.keys():
+            if "object" in item:
+                temp = re.findall(r'\d+', item)
+                res = list(map(int, temp))
+                if len(res) > 0:
+                    keys_annotation.append(res[0])
         loc = b["image_name"]
-        f1 = b["object1_label"]
-        f2 = b["object2_label"]
+        #f1 = b["object1_label"]
+        #f2 = b["object2_label"]
         init = res.get(loc)
         if init is None:
             res[loc] = {}
-        if f1 is not None:
-            res[loc].update({f1: 1})
-        if f2 is not None:
-            res[loc].update({f2: 1})
+
+        for item in keys_annotation:
+            if b["object" + item_annotation + "_label"] is not None:
+                res[loc].update({b["object" + item_annotation + "_label"]: 1})
+        #if f1 is not None:
+        #    res[loc].update({f1: 1})
+        #if f2 is not None:
+        #    res[loc].update({f2: 1})
     return res
 
 
@@ -276,12 +317,22 @@ def get_tabular_representation(batch_file, batch_prediction_file):
     # get a set of all UNIQUE semantic features from the batch
     semantic_features = set()
     for b in batch:
-        f1 = b["object1_label"]
-        f2 = b["object2_label"]
-        if f1 is not None:
-            semantic_features.add(f1)
-        if f2 is not None:
-            semantic_features.add(f2)
+        keys_annotation = []
+        for item in b.keys():
+            if "object" in item:
+                temp = re.findall(r'\d+', item)
+                res = list(map(int, temp))
+                if len(res) > 0:
+                    keys_annotation.append(res[0])
+        for item in keys_annotation:
+            if b["object" + item_annotation + "_label"] is not None:
+                semantic_features.add(b["object" + item_annotation + "_label"])
+        #f1 = b["object1_label"]
+        #f2 = b["object2_label"]
+        #if f1 is not None:
+        #    semantic_features.add(f1)
+        #if f2 is not None:
+        #    semantic_features.add(f2)
 
     # setup the tabular representation
     structured_representation_cols = [
@@ -310,12 +361,25 @@ def get_tabular_representation(batch_file, batch_prediction_file):
             representation_df.loc[cur_index,
                                   'predicted_label'] = predicted_label
 
-            f1 = b["object1_label"]
-            f2 = b["object2_label"]
-            if f1 is not None:
-                representation_df.loc[cur_index, f1] = 1
-            if f2 is not None:
-                representation_df.loc[cur_index, f2] = 1
+
+            keys_annotation = []
+            for item in b.keys():
+                if "object" in item:
+                    temp = re.findall(r'\d+', item)
+                    res = list(map(int, temp))
+                    if len(res) > 0:
+                        keys_annotation.append(res[0])
+            for item in keys_annotation:
+                if b["object" + item_annotation + "_label"] is not None:
+                    representation_df.loc[cur_index, b["object" + item_annotation + "_label"]] = 1
+                    #semantic_features.add(b["object" + item_annotation + "_label"])
+
+            #f1 = b["object1_label"]
+            #f2 = b["object2_label"]
+            #if f1 is not None:
+            #    representation_df.loc[cur_index, f1] = 1
+            #if f2 is not None:
+            #    representation_df.loc[cur_index, f2] = 1
 
             # update misc data structures
             seen_images.add(image_name)
@@ -324,12 +388,22 @@ def get_tabular_representation(batch_file, batch_prediction_file):
         # if we have seen this image already, we find the row, and add new data
         else:
             df_index = index_dict[image_name]
-            f1 = b["object1_label"]
-            f2 = b["object2_label"]
-            if f1 is not None:
-                representation_df.loc[df_index, f1] = 1
-            if f2 is not None:
-                representation_df.loc[df_index, f2] = 1
+            keys_annotation = []
+            for item in b.keys():
+                if "object" in item:
+                    temp = re.findall(r'\d+', item)
+                    res = list(map(int, temp))
+                    if len(res) > 0:
+                        keys_annotation.append(res[0])
+            for item in keys_annotation:
+                if b["object" + item_annotation + "_label"] is not None:
+                    representation_df.loc[df_index, b["object" + item_annotation + "_label"]] = 1
+            #f1 = b["object1_label"]
+            #f2 = b["object2_label"]
+            #if f1 is not None:
+            #    representation_df.loc[df_index, f1] = 1
+            #if f2 is not None:
+            #    representation_df.loc[df_index, f2] = 1
 
     representation_df = representation_df.fillna(0)  # fill empty values with 0
     representation_df['classification_check'] = (
@@ -365,12 +439,23 @@ def get_tabular_representation_rule_mining(batch_file, batch_prediction_file, an
     # get a set of all UNIQUE semantic features from the batch
     semantic_features = set()
     for b in batch:
-        f1 = b["object1_label"]
-        f2 = b["object2_label"]
-        if f1 is not None:
-            semantic_features.add(f1)
-        if f2 is not None:
-            semantic_features.add(f2)
+        keys_annotation = []
+        for item in b.keys():
+            if "object" in item:
+                temp = re.findall(r'\d+', item)
+                res = list(map(int, temp))
+                if len(res) > 0:
+                    keys_annotation.append(res[0])
+        for item in keys_annotation:
+            if b["object" + item_annotation + "_label"] is not None:
+                semantic_features.add(b["object" + item_annotation + "_label"])
+
+        #f1 = b["object1_label"]
+        #f2 = b["object2_label"]
+        #if f1 is not None:
+        #    semantic_features.add(f1)
+        #if f2 is not None:
+        #    semantic_features.add(f2)
 
     # setup the tabular representation
     structured_representation_cols = [
@@ -399,12 +484,22 @@ def get_tabular_representation_rule_mining(batch_file, batch_prediction_file, an
             representation_df.loc[cur_index,
                                   'predicted_label'] = predicted_label
 
-            f1 = b["object1_label"]
-            f2 = b["object2_label"]
-            if f1 is not None:
-                representation_df.loc[cur_index, f1] = 1
-            if f2 is not None:
-                representation_df.loc[cur_index, f2] = 1
+            keys_annotation = []
+            for item in b.keys():
+                if "object" in item:
+                    temp = re.findall(r'\d+', item)
+                    res = list(map(int, temp))
+                    if len(res) > 0:
+                        keys_annotation.append(res[0])
+            for item in keys_annotation:
+                if b["object" + item_annotation + "_label"] is not None:
+                    representation_df.loc[cur_index, b["object" + item_annotation + "_label"]] = 1
+            #f1 = b["object1_label"]
+            #f2 = b["object2_label"]
+            #if f1 is not None:
+            #    representation_df.loc[cur_index, f1] = 1
+            #if f2 is not None:
+            #    representation_df.loc[cur_index, f2] = 1
 
             # update misc data structures
             seen_images.add(image_name)
@@ -413,12 +508,22 @@ def get_tabular_representation_rule_mining(batch_file, batch_prediction_file, an
         # if we have seen this image already, we find the row, and add new data
         else:
             df_index = index_dict[image_name]
-            f1 = b["object1_label"]
-            f2 = b["object2_label"]
-            if f1 is not None:
-                representation_df.loc[df_index, f1] = 1
-            if f2 is not None:
-                representation_df.loc[df_index, f2] = 1
+            keys_annotation = []
+            for item in b.keys():
+                if "object" in item:
+                    temp = re.findall(r'\d+', item)
+                    res = list(map(int, temp))
+                    if len(res) > 0:
+                        keys_annotation.append(res[0])
+            for item in keys_annotation:
+                if b["object" + item_annotation + "_label"] is not None:
+                    representation_df.loc[df_index, b["object" + item_annotation + "_label"]] = 1
+            #f1 = b["object1_label"]
+            #f2 = b["object2_label"]
+            #if f1 is not None:
+            #    representation_df.loc[df_index, f1] = 1
+            #if f2 is not None:
+            #    representation_df.loc[df_index, f2] = 1
 
     representation_df = representation_df.fillna(0)  # fill empty values with 0
     new_antecedent = []

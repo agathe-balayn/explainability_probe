@@ -9,6 +9,7 @@ import "./ConfusionMatrix/ConfusionMatrix";
 import "./Query/Query";
 import "../css/Dashboard.less";
 import "./ConfusionMatrix/ConfusionMatrix";
+import Modal from 'react-bootstrap/Modal'
 import QueryClassificationFormulas from "./Query/QueryClassificationFormulas";
 const { Panel } = Collapse;
 const RadioGroup = Radio.Group;
@@ -28,6 +29,9 @@ export default function Dashboard(props) {
     let [binaryLabels, setBinaryLabels] = useState([]);
     let [sorting, setSorting] = useState("concept");
     let [f1_scores, setF1_scores] = useState([]);
+    //State functions to control the modal overlays
+    const [showModal, setShowModal] = useState(false);
+    const [modalData, setModalData] = useState([]);
     const session_id = useState(JSON.parse(sessionStorage.getItem("session")))
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
@@ -84,6 +88,7 @@ export default function Dashboard(props) {
 
             })
             .then(response => {
+                console.log(response.data)
                 setMatrixImages(response.data)
             })
             .catch(function (error) {
@@ -166,6 +171,18 @@ export default function Dashboard(props) {
             });
     }
 
+    const fillModalData = ( heatmap, image, annotations,gt,label,confidence) => {
+        setModalData({
+            "image": image,
+            "heatmap": heatmap,
+            "annotations" : annotations,
+            "gt": gt,
+            "label": label,
+            "confidence": confidence
+        });
+        setShowModal(true);
+    }
+
 
     const chartData = {
         labels: binaryLabels,
@@ -198,25 +215,30 @@ export default function Dashboard(props) {
     for (let key in matrixImages) {
         if (height < matrixImages[key]["images"].length) {
             height = matrixImages[key]["images"].length
-        }
+        }   
     }
     for (let key in matrixImages) {
+        const [gt, label] = key.replace("_classified_as_"," ").split(" ");
         let images = [];
         for(let image in matrixImages[key]["images"]) {
+            
             images.push({
                 view:
-                    <div>
+                    <>
+                    {/* Image in column */}
+                    <div className="hover-click-pair" onClick={() => fillModalData(matrixImages[key]["heatmaps"][image],matrixImages[key]["images"][image], matrixImages[key]["annotations"],gt,label, matrixImages[key]["confidence"] ) }>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}
                             style={{"width": 100 + "px", height: 100 + "px"}}></img>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["images"][image]}
                             style={{"width": 100 + "px", height: 100 + "px"}}></img>
                     </div>
+                  </>
             })
         }
 
         columns.push({
             view:
-                <div className={"imageColumn"} style={{"height": (height * 500 * matrixImages.length).toString() + "px" }}>
+                <div className="imageColumn d-flex flex-column" style={{"height": (height * 500 * matrixImages.length).toString() + "px" }}>
                     <h3 className={"imageColumnTitle"}>{key.replace(/_/g, " ")}</h3>
                     {
                         images.map(item => (
@@ -467,18 +489,46 @@ export default function Dashboard(props) {
             </Row>
 
             <Row>
-                <Col span={12}>
-                    <div className="quadrant">
-                        <QueryClassificationFormulas />
-                    </div>
-                </Col>
-                <Col span={12}>
-                    <div id={"quadrant3"} className="quadrant">
-                        <h1 className={"quadrantTitle"}>Query display</h1>
-                        <p>To be implemented</p>
+                <Col span={24}>
+                    <div className="py-2 pr-3">
+                        <div className="quadrant w-100">
+                            <QueryClassificationFormulas />
+                        </div>
                     </div>
                 </Col>
             </Row>
+            <Modal show={showModal} onHide={() => {setShowModal(false)}}      >
+                        <Modal.Header closeButton closeLabel="close window">
+                        <h4>Details for {modalData["gt"]}</h4>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <div className="d-flex">
+                                <div className="row">
+                                    <div className="col-12">
+                                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"] === null ? "unknown" :modalData["confidence"] +'%'})</p>
+                                    </div>
+                                    <div className="col-12">
+                                        <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
+                                        <p>original image</p>
+                                    </div>
+                                    <div className="col-12">
+                                        <img src={'data:image/jpeg;base64,' + modalData["heatmap"]}></img>
+                                        <p>heatmap</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {modalData["annotations"]  ?
+                            <>
+                            <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
+                            <ul>
+                                {modalData["annotations"].map(a => <li>{a}</li>)}
+                            </ul>
+                            </>
+                            :
+                            <h3>No annotated concepts have been found</h3>
+                            }
+                        </Modal.Body>
+            </Modal>
         </div>
     );
 }

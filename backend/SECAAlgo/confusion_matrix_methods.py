@@ -88,40 +88,56 @@ def get_matrix_images(class_A, class_B, session_id):
                status.HTTP_417_EXPECTATION_FAILED
 
     path_images = os.path.join(
-        Path(__file__).resolve().parent, "images/" + predictions.name)
+        Path(__file__).resolve().parent, "matrix_images/images/" + predictions.name)
 
     A_classified_as_A = {
         "images": [],
-        "heatmaps": []
+        "heatmaps": [],
+        "annotations": [],
+        "confidence": []
     }
     A_classified_as_B = {
         "images": [],
-        "heatmaps": []
+        "heatmaps": [],
+        "annotations": [],
+        "confidence": []
     }
     B_classified_as_A = {
         "images": [],
-        "heatmaps": []
+        "heatmaps": [],
+        "annotations": [],
+        "confidence": []
     }
     B_classified_as_B = {
         "images": [],
-        "heatmaps": []
+        "heatmaps": [],
+        "annotations": [],
+        "confidence": []
     }
 
     for row in predictions.images.all():
         cat = row.actual_image
         pre = row.predicted_image
         image_name = row.image_name
+        confidence = row.confidence
+        annotations = row.annotations_set.values_list('annotation')
 
         if cat == class_A and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
                 img = image.read()
                 img = base64.b64encode(img).decode('utf-8')
                 A_classified_as_A["images"].append(img)
+                
 
             with open(os.path.join(path_images, "ppp_" + image_name), "rb") as image:
                 img = image.read()
                 img = base64.b64encode(img).decode('utf-8')
                 A_classified_as_A["heatmaps"].append(img)
+            
+            A_classified_as_A["confidence"] = confidence
+            if len(annotations) > 0:
+                A_classified_as_A["annotations"] = annotations
+
 
         elif cat == class_A and pre == class_B:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -133,6 +149,10 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = image.read()
                 img = base64.b64encode(img).decode('utf-8')
                 A_classified_as_B["heatmaps"].append(img)
+            
+            A_classified_as_B["confidence"] = confidence
+            if len(annotations) > 0:
+                A_classified_as_B["annotations"] = annotations
 
         elif cat == class_B and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -145,6 +165,10 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = base64.b64encode(img).decode('utf-8')
                 B_classified_as_A["heatmaps"].append(img)
 
+            B_classified_as_A["confidence"] = confidence
+            if len(annotations) > 0:
+                B_classified_as_A["annotations"] = annotations                
+
         elif cat == class_B and pre == class_B:
             with open(os.path.join(path_images, image_name), "rb") as image:
                 img = image.read()
@@ -155,6 +179,11 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = image.read()
                 img = base64.b64encode(img).decode('utf-8')
                 B_classified_as_B["heatmaps"].append(img)
+
+            B_classified_as_B["confidence"] = confidence
+            if len(annotations) > 0:
+                B_classified_as_B["annotations"] = annotations      
+                
     return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,
                f"{class_A}_classified_as_{class_B}": A_classified_as_B,

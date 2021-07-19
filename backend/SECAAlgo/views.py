@@ -60,7 +60,7 @@ def confusion_matrix(self):
 @authentication_classes([
     TokenAuthentication,
 ])
-def images_matrix(request):
+def images_matrix(request): 
     """
     Receives a 'GET' request with information of 2 classes and a session id in the header. Returns all the images
     which are related to those two classes, in that 'session', in an ordered manner of the true class and what it was
