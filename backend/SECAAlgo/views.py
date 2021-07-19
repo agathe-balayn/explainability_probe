@@ -150,10 +150,12 @@ def add_image(request):
 
     path = os.path.join(parent_dir, data_name)
     try:
-        os.mkdir(path)
+        os.makedirs(path)
 
     except:
-        print("dir exits")
+        ERROR_MSG = "Error making path, see output of Django console"
+        print(ERROR_MSG)
+        return Response(ERROR_MSG, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     for image in image_data:
         imageEncoded = image_data[image].replace("data:image/jpeg;base64,", "")
