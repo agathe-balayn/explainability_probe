@@ -25,7 +25,7 @@ class Annotations(models.Model):
     #id = models.AutoField(primary_key=True, default=0)
     image = models.ForeignKey(Images, on_delete=models.CASCADE)
     annotation = models.CharField(max_length=50)
-    bounding_box_coordinates = models.CharField(max_length=50)
+    bounding_box_coordinates = models.CharField(max_length=50, null=True)
     weight = models.IntegerField()
     #heatmap_id = models.CharField(max_length=50)
     reason = models.CharField(max_length=300, blank=True, null=True)
