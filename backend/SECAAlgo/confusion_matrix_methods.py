@@ -120,7 +120,7 @@ def get_matrix_images(class_A, class_B, session_id):
         pre = row.predicted_image
         image_name = row.image_name
         confidence = row.confidence
-        annotations = row.annotations_set.values_list('annotation')
+        annotations = set(row.annotations_set.values_list('annotation')[::1])
 
         if cat == class_A and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
