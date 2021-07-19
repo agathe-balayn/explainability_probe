@@ -362,6 +362,7 @@ def data_overall_explanations(request):
     """
     setting = request.data["IMAGE_SET_SETTING"]
     session_id = request.data["session_id"]
+    print("we are here")
     if (setting == "CORRECT_PREDICTION_ONLY"):
         result = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY", session_id=session_id)[0]
     elif (setting == "ALL_IMAGES"):

@@ -289,14 +289,17 @@ def prepare_data_mining_input(semantic_feature_representation):
         list(filter(lambda a: a != 0, row)) for row in list_dataset
     ]
     list_antecedents = frozenset(cols_to_transform)
-    list_consequents = frozenset(["predicted_label"])
+    list_consequents = frozenset(semantic_feature_representation["predicted_label"])
+    #print(semantic_feature_representation)
+    #print(list_antecedents)
+    #print(list_consequents)
     return clean_list_dataset, list_antecedents, list_consequents
 
 
 def get_rules(semantic_feature_representation,
               min_support_score=0.75,
               min_lift_score=1.2,
-              min_confidence_score=0.75):
+              min_confidence_score=0.75, list_antecedents=[], list_consequents=[]):
     """
         Extract the rules and frequent item sets from the structured representation
         Args:
@@ -309,6 +312,7 @@ def get_rules(semantic_feature_representation,
            frequent_itemsets (pd.DataFrame): DataFrame containing the frequent item sets
     """
     # Get frequent item set
+    #print(semantic_feature_representation)
     te = TransactionEncoder()
     te_ary = te.fit(semantic_feature_representation).transform(
         semantic_feature_representation)
@@ -317,9 +321,20 @@ def get_rules(semantic_feature_representation,
     frequent_itemsets = apriori(df,
                                 min_support=min_support_score,
                                 use_colnames=True)
+    #if len(frequent_itemsets) > 10000:
+    #print(frequent_itemsets)
+    # Keep itemsets with labels, and a number of others.
+    itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: True if len(
+                             f.intersection(list_consequents)) > 0 else False), :]
+    other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if len(
+                             f.intersection(list_consequents)) > 0 else True), :].nlargest(min(25000, len(frequent_itemsets) - len(itemsets_labels)),'support')
+
+    frequent_itemsets = pd.concat([itemsets_labels, other_sets])#frequent_itemsets.nlargest(min(20000, len(frequent_itemsets)),'support')
+    #print(frequent_itemsets)
     # frequent_itemsets.to_json('frequent_itemsets_0.json')
     # frequent_itemsets.to_csv('frequent_itemsets_0.csv', index=False)
     print("Finished extracting frequent itemsets")
+    #print("fre ", frequent_itemsets, len(frequent_itemsets))
     # frequent_itemsets = pd.read_json('frequent_itemsets_0.json')
 
     frequent_itemsets['itemsets'] = frequent_itemsets['itemsets'].apply(
@@ -328,10 +343,69 @@ def get_rules(semantic_feature_representation,
     rules = association_rules(frequent_itemsets,
                               metric="lift",
                               min_threshold=min_lift_score)
+    #print("ant", len(list_antecedents))
+    if len(list_antecedents) > 0:
+        rules.replace([np.inf, -np.inf], 999999, inplace=True)
+        #print(rules)
+        # filter rules, and produce list of wanted rules
+        rules = rules.loc[
+                         rules['consequents'].apply(lambda f: False if len(
+                             f.intersection(list_antecedents)) > 0 else True), :]
+        rules = rules.loc[rules['antecedents'].apply(
+            lambda f: False
+            if len(f.intersection(list_consequents)) > 0 else True)]
+        #print("output222", len(rules))
+
+    if len(rules) < 20:
+        rules = association_rules(frequent_itemsets,
+                              metric="lift",
+                              min_threshold=0.0)
+    if len(list_antecedents) > 0:
+        rules.replace([np.inf, -np.inf], 999999, inplace=True)
+        # filter rules, and produce list of wanted rules
+        rules = rules.loc[
+                         rules['consequents'].apply(lambda f: False if len(
+                             f.intersection(list_antecedents)) > 0 else True), :]
+        rules = rules.loc[rules['antecedents'].apply(
+            lambda f: False
+            if len(f.intersection(list_consequents)) > 0 else True)]
+    if len(rules) < 20:
+        frequent_itemsets = apriori(df,
+                                min_support=0.00001,
+                                use_colnames=True)
+        itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: True if len(
+                             f.intersection(list_consequents)) > 0 else False), :]
+        other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if len(
+                                 f.intersection(list_consequents)) > 0 else True), :].nlargest(min(20000, len(frequent_itemsets) - len(itemsets_labels)),'support')
+
+        frequent_itemsets = pd.concat([itemsets_labels, other_sets])
+        frequent_itemsets['itemsets'] = frequent_itemsets['itemsets'].apply(
+            lambda x: frozenset(x))
+        # Post filter the rules, for instance to use two metrics
+        rules = association_rules(frequent_itemsets,
+                                  metric="lift",
+                                  min_threshold=0.0)
+        if len(list_antecedents) > 0:
+            rules.replace([np.inf, -np.inf], 999999, inplace=True)
+            # filter rules, and produce list of wanted rules
+            rules = rules.loc[
+                             rules['consequents'].apply(lambda f: False if len(
+                                 f.intersection(list_antecedents)) > 0 else True), :]
+            rules = rules.loc[rules['antecedents'].apply(
+                lambda f: False
+                if len(f.intersection(list_consequents)) > 0 else True)]
+
+
     rules["antecedent_len"] = rules["antecedents"].apply(lambda x: len(x))
     rules = rules[(rules['antecedent_len'] >= 0)
                   & (rules['confidence'] > min_confidence_score) &
                   (rules['lift'] > min_lift_score)]
+    if len(rules) < 20:
+        rules = rules[(rules['antecedent_len'] >= 0)
+                  & (rules['confidence'] > 0.1) &
+                  (rules['lift'] > 0.1)]
+
+    print("Data mining rules: ", rules)
     return rules, frequent_itemsets
 
 if __name__ == "__main__":

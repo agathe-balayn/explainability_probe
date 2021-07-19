@@ -441,16 +441,20 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
         structured_representation)
     # extract rules (this method takes the longest time)
     rules, frequent_itemsets = get_rules(modified_representation, min_support_score,
-                                         min_lift_score, min_confidence_score)
+                                         min_lift_score, min_confidence_score, list_antecedents=list_antecedents, list_consequents=list_consequents)
+    #print("output", rules)
     rules.replace([np.inf, -np.inf], 999999, inplace=True)
+    data_mining_rules = rules
+    #print("output2", rules)
 
     # filter rules, and produce list of wanted rules
-    filtered_rules = rules.loc[
-                     rules['consequents'].apply(lambda f: False if len(
-                         f.intersection(list_antecedents)) > 0 else True), :]
-    data_mining_rules = filtered_rules.loc[filtered_rules['antecedents'].apply(
-        lambda f: False
-        if len(f.intersection(list_consequents)) > 0 else True)]
+    #filtered_rules = rules.loc[
+    #                 rules['consequents'].apply(lambda f: False if len(
+    #                     f.intersection(list_antecedents)) > 0 else True), :]
+    #data_mining_rules = filtered_rules.loc[filtered_rules['antecedents'].apply(
+    #    lambda f: False
+    #    if len(f.intersection(list_consequents)) > 0 else True)]
+    #print("output3", data_mining_rules)
 
     # filter the data mining results based on the maximum set antecedent length, and if we need to filter any concepts
     if filter_concepts == "ALL":
@@ -605,8 +609,8 @@ def make_tabular_representation_rule_mining_included(old_structured_representati
 
 
 def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
-                                 max_antecedent_length=3, min_support_score=0.000001,
-                                 min_lift_score=0.2, min_confidence_score=0.3,
+                                 max_antecedent_length=10, min_support_score=0.1,
+                                 min_lift_score=0.1, min_confidence_score=0.1,
                                  filter_concepts="ALL", or_queries=[],
                                  desired_classes=["ALL"], class_selection=["ALL"],
                                  predicted_class=["ALL"], not_predicted_class=["ALL"],
@@ -727,10 +731,12 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     rep_old = structured_representation.copy(deep=True)
 
     # 3. Perform rule mining
+    print("perform rule mining")
     data_mining_rules, antecendets_from_rule_mining, supp_conf = perform_rule_mining(
         structured_representation, max_antecedent_length, min_support_score, min_lift_score, min_confidence_score,
         filter_concepts=filter_concepts, or_queries=or_queries, or_exclude=or_exclude,
         or_not_query=or_not_query, exclude_concepts=exclude_concepts)
+    #print(data_mining_rules)
 
     if return_setting == "RULES_ONLY":  # if the user only wants the data mining rules
         return data_mining_rules.to_dict('records'), [], status.HTTP_200_OK
