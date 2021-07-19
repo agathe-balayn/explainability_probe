@@ -216,9 +216,9 @@ def link_annotations(annotation_input, session_id):
                 elif (annotation_pair["reason"] is  None):
                     annotation_pair["reason"] = "unknown"
                 if "weight" not in annotation_pair.keys():
-                    annotation_pair["weight"] = 0
+                    annotation_pair["weight"] = 1
                 elif annotation_pair["weight"] is None:
-                    annotation_pair["weight"] = 0
+                    annotation_pair["weight"] = 1
                 a1 = Annotations(image=Sessions.objects.filter(id=session_id)[0].images.filter(
                         image_name=annotation_pair["image_name"])[0],
                                     annotation=annotation_pair["object" + str(item_annotation) + "_label"],
