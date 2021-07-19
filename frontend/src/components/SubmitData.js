@@ -120,7 +120,7 @@ export default function SubmitData(props) {
 
 
         for(let i = 0; i < images.length; i++) {
-                if(images[i].name.substring(images[i].name.length-3, images[i].name.length) !== "jpg") {
+                if((images[i].name.substring(images[i].name.length-3, images[i].name.length) !== "jpg") && (images[i].name.substring(images[i].name.length-3, images[i].name.length) !== "png")) {
 
                     const error = document.createElement("div")
                     error.className = "error"
