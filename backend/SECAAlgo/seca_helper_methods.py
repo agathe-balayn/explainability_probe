@@ -203,7 +203,7 @@ def link_annotations(annotation_input, session_id):
                 temp = re.findall(r'\d+', item)
                 res = list(map(int, temp))
                 if len(res) > 0:
-                    keys_annotation.append(res[0])
+                    keys_annotation.append(str(res[0]))
 
 
 

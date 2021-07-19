@@ -64,6 +64,12 @@ export default function SubmitData(props) {
         setUserCount(userCount - 1)
         setUserInputs(inputs)
     }
+
+    /**
+     * Submits data to the backend, to multiple API endpoints:
+     * /api/SECAAlgo/add_data/ For the chosen .csv and .json file
+     * /api/SECAAlgo/add_image/ For the images
+     */
     function addData() {
         const errors = document.getElementsByClassName("errorDiv")[0]
         errors.innerHTML = ""
@@ -187,9 +193,11 @@ export default function SubmitData(props) {
                 imageReader.readAsDataURL(imageList[i]);
 
             }
-
+            
+            //Post to the API
             submitImages (images, {}, 0)
 
+            //Interpret json and csv files and post as json to the add_data API
             try {
                 const users = [userName]
 

@@ -226,7 +226,15 @@ export default function Dashboard(props) {
                 view:
                     <>
                     {/* Image in column */}
-                    <div className="hover-click-pair" onClick={() => fillModalData(matrixImages[key]["heatmaps"][image],matrixImages[key]["images"][image], matrixImages[key]["annotations"],gt,label, matrixImages[key]["confidence"] ) }>
+                    <div className="hover-click-pair" onClick={() => 
+                        fillModalData(
+                            matrixImages[key]["heatmaps"][image],
+                            matrixImages[key]["images"][image],
+                            matrixImages[key]["annotations"],
+                            gt,
+                            label, 
+                            matrixImages[key]["confidence"] 
+                            ) }>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}
                             style={{"width": 100 + "px", height: 100 + "px"}}></img>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["images"][image]}
@@ -342,6 +350,9 @@ export default function Dashboard(props) {
     let labels1 = ["Prediction", "Ground Truth"]
     let [labelState, setLabelState] = useState(true);
     let [labels, setLabels] = useState(labels1);
+    //Keep distinct values
+    const annotations = modalData["annotations"];
+    
 
     return (
         <div id={"entire-page"}>
@@ -505,7 +516,7 @@ export default function Dashboard(props) {
                             <div className="d-flex">
                                 <div className="row">
                                     <div className="col-12">
-                                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"] === null ? "unknown" :modalData["confidence"] +'%'})</p>
+                                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"]})</p>
                                     </div>
                                     <div className="col-12">
                                         <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
@@ -517,16 +528,18 @@ export default function Dashboard(props) {
                                     </div>
                                 </div>
                             </div>
-                            {modalData["annotations"]  ?
+                            {
+                            modalData["annotations"] !== undefined ?
                             <>
                             <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
                             <ul>
-                                {modalData["annotations"].map(a => <li>{a}</li>)}
+                                {modalData["annotations"].filter((self,value,index) => (self.indexOf(value) === index))
+                                .map(a => <li>{a}</li>)}
                             </ul>
                             </>
                             :
-                            <h3>No annotated concepts have been found</h3>
-                            }
+                            <h5>No annotated concepts for this image</h5>
+                        }
                         </Modal.Body>
             </Modal>
         </div>
