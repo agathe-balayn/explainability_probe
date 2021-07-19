@@ -88,7 +88,6 @@ export default function Dashboard(props) {
 
             })
             .then(response => {
-                console.log(response.data)
                 setMatrixImages(response.data)
             })
             .catch(function (error) {
@@ -529,12 +528,11 @@ export default function Dashboard(props) {
                                 </div>
                             </div>
                             {
-                            modalData["annotations"] !== undefined ?
+                            modalData["annotations"].length > 0 ?
                             <>
                             <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
                             <ul>
-                                {modalData["annotations"].filter((self,value,index) => (self.indexOf(value) === index))
-                                .map(a => <li>{a}</li>)}
+                                {modalData["annotations"].map(a => <li>{a}</li>)}
                             </ul>
                             </>
                             :
