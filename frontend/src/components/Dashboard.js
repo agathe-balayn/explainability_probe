@@ -528,7 +528,7 @@ export default function Dashboard(props) {
                                 </div>
                             </div>
                             {
-                            modalData["annotations"].length > 0 ?
+                            modalData["annotations"] !== undefined && modalData["annotations"].length > 0 ?
                             <>
                             <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
                             <ul>
