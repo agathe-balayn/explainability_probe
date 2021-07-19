@@ -203,20 +203,26 @@ def link_annotations(annotation_input, session_id):
                 temp = re.findall(r'\d+', item)
                 res = list(map(int, temp))
                 if len(res) > 0:
-                    keys_annotation.append(str(res[0]))
+                    keys_annotation.append(res[0])
 
 
 
 
         # Run the code for each of them.
         for item_annotation in keys_annotation:
-            if annotation_pair["object" + item_annotation + "_label"] is not None:
-                if annotation_pair["reason"] is  None:
+            if annotation_pair["object" + str(item_annotation) + "_label"] is not None:
+                if ("reason" not in annotation_pair.keys()):
                     annotation_pair["reason"] = "unknown"
+                elif (annotation_pair["reason"] is  None):
+                    annotation_pair["reason"] = "unknown"
+                if "weight" not in annotation_pair.keys():
+                    annotation_pair["weight"] = 0
+                elif annotation_pair["weight"] is None:
+                    annotation_pair["weight"] = 0
                 a1 = Annotations(image=Sessions.objects.filter(id=session_id)[0].images.filter(
                         image_name=annotation_pair["image_name"])[0],
-                                    annotation=annotation_pair["object" + item_annotation + "_label"],
-                                    bounding_box_coordinates=annotation_pair["object" + item_annotation + "_bbox"],
+                                    annotation=annotation_pair["object" + str(item_annotation) + "_label"],
+                                    bounding_box_coordinates=annotation_pair["object" + str(item_annotation) + "_bbox"],
                                 weight=annotation_pair["weight"], reason=annotation_pair["reason"])
                 a1.save()
 
