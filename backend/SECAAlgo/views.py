@@ -80,6 +80,7 @@ def images_matrix(request):
                         "were properly included in the request.", status=status.HTTP_417_EXPECTATION_FAILED)
 
     images, stat = get_matrix_images(class_A=class_A, class_B=class_B, session_id=session_id)
+    print("Found images", images)
     return Response(images, status=stat)
 
 

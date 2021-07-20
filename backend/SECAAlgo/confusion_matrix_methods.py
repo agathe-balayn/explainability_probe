@@ -199,8 +199,13 @@ def get_matrix_images(class_A, class_B, session_id):
         #else:
         #    if (len(A_classified_as_A["images"]) > 10) and (len(B_classified_as_B["images"]) > 10) and (len(A_classified_as_B["images"]) > 10) and (len(B_classified_as_A["images"]) > 10):
         #        break
-                
-    return {
+    print(class_A, class_B)   
+    if class_A == class_B:
+        return {
+               f"{class_A}_classified_as_{class_A}": A_classified_as_A,
+           }, status.HTTP_200_OK
+    else:      
+        return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,
                f"{class_A}_classified_as_{class_B}": A_classified_as_B,
                f"{class_B}_classified_as_{class_A}": B_classified_as_A,

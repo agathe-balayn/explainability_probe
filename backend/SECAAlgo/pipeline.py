@@ -844,8 +844,8 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         image_list, image_set_setting)
     # a copy is made here, because structured_representation gets changed in rule mining
     rep_old = structured_representation.copy(deep=True)
-    print(structured_representation)
-    print(semantic_features)
+    #print(structured_representation)
+    #print(semantic_features)
 
     # 3. Perform rule mining
     print("perform rule mining")
