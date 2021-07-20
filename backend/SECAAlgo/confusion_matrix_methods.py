@@ -86,7 +86,7 @@ def get_matrix_images(class_A, class_B, session_id):
         # Query images for this confusion matrix, with conditions for the actual and predicted class, respectively
         images = predictions.images.filter( (Q(actual_image=class_A) & Q(predicted_image=class_B)) |
         (Q(actual_image=class_A) & Q(predicted_image=class_A)) | (Q(actual_image=class_B) & Q(predicted_image=class_A)
-         | (Q(actual_image=class_B) & Q(predicted_image=class_B)))  )
+         | (Q(actual_image=class_B) & Q(predicted_image=class_B))))
 
     except IndexError:
         return "You are trying to get information from a prediction set that does not exist", \
@@ -142,7 +142,7 @@ def get_matrix_images(class_A, class_B, session_id):
             
             A_classified_as_A["confidence"] = confidence
             if len(annotations) > 0:
-                A_classified_as_A["annotations"] = annotations
+                A_classified_as_A["annotations"].append(annotations)
 
 
         elif cat == class_A and pre == class_B:
@@ -173,7 +173,7 @@ def get_matrix_images(class_A, class_B, session_id):
 
             B_classified_as_A["confidence"] = confidence
             if len(annotations) > 0:
-                B_classified_as_A["annotations"] = annotations                
+                B_classified_as_A["annotations"].append(annotations)
 
         elif cat == class_B and pre == class_B:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -188,18 +188,12 @@ def get_matrix_images(class_A, class_B, session_id):
 
             B_classified_as_B["confidence"] = confidence
             if len(annotations) > 0:
-                B_classified_as_B["annotations"] = annotations   
+                B_classified_as_B["annotations"].append(annotations)
 
-        ### Stop when we have 10 images of each ---otherwise too slow.
-        # If we're on the diagonal, we don't need as many.
-        #if class_A == class_B:
-            #print(len(A_classified_as_A["images"]))
-        #    if len(A_classified_as_A["images"]) > 10:
-        #        break
-        #else:
-        #    if (len(A_classified_as_A["images"]) > 10) and (len(B_classified_as_B["images"]) > 10) and (len(A_classified_as_B["images"]) > 10) and (len(B_classified_as_A["images"]) > 10):
-        #        break
-                
+    if class_A == class_B:
+        return {
+            f"{class_A}_classified_as_{class_A}": A_classified_as_A,
+            }, status.HTTP_200_OK  
     return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,
                f"{class_A}_classified_as_{class_B}": A_classified_as_B,
