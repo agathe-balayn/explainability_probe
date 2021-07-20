@@ -576,6 +576,7 @@ def compute_statistical_tests_custom(semantic_feature_representation, print_valu
         Returns:
             a dictionary where key is the semantic feature, and value is another dictionary of cramer value, p_value and class_name_frequencies
     """
+    print("compute stat tests")
     semantic_feature_stats_dict = {}
     for semantic_feature in semantic_feature_representation.columns[3:-1]:
         contingency_table = pd.pivot_table(

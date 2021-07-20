@@ -8,7 +8,7 @@ from .serializer import UniversalSerializer, SerializerClassNotFoundException
 from .seca_helper_methods import get_tabular_representation, get_tabular_representation_rule_mining, \
     save_csv_predictions, link_annotations, compute_statistical_tests_custom
 from .pipeline import execute_rule_mining_pipeline
-from .query import query_rules, query_classes, universal_query
+from .query import query_rules, query_classes, universal_query, query_images
 from .models import Sessions, Images, Notes
 from django.core.exceptions import FieldError
 from django.views.generic import View
@@ -176,14 +176,45 @@ def query_specific_images(request):
     :param request: A HTTP POST request with the query data that is being sent. Has the same format as querying rules
     :return: A Response object with a set of images and a status code, 200 for success, and 400 for failure.
     """
-    res, code = query_rules(request.data)
+    print("start looking for images")
+    print(request.data)
+    res, code = query_images(request.data)
+    #print(res)
     editedResult = []
     image_names = []
     session_id = request.data['session_id']
     session = Sessions.objects.filter(id=session_id)
     dir = os.path.join(Path(__file__).resolve().parent,
                        "images/" + session[0].name)
+    for idx, row in res[res["filter_concepts"] == 1].iterrows():
+        obj = {'predicted_class': row["predicted_label"]}
+        obj['image_name'] = row["image_name"]
+        with open(os.path.join(dir, "ppp_" + row["image_name"]), "rb") as image:
+            img = image.read()
+            img = base64.b64encode(img).decode('utf-8')
+            obj['saliency_map'] = img
 
+        with open(os.path.join(dir, row["image_name"]), "rb") as image:
+            img = image.read()
+            img = base64.b64encode(img).decode('utf-8')
+            obj['image'] = img
+
+        obj['true_class'] = row["true_label"]
+        obj['rules'] = ""
+        editedResult.append(obj)
+    for i in editedResult:
+        image = Images.objects.filter(image_name=i['image_name'])
+        list_annot = []
+        for j in Annotations.objects.filter(image=image[0]):
+            list_annot.append(j.annotation)
+            #i['rules'] += j.annotation + ", "
+        for elem in  list(set(list_annot)):
+            i['rules'] += elem + ", "
+
+    return Response(editedResult, code)
+    
+    """
+    print(res['rules'])
     for rule in res['rules']:
         for predicted_class in res['rules'][rule]:
             for i in res['rules'][rule][predicted_class]:
@@ -213,6 +244,8 @@ def query_specific_images(request):
             i['rules'] += j.annotation + ", "
 
     return Response(editedResult, code)
+    """
+    return
 
 
 def all_images_from_problem_view(request):
@@ -362,6 +395,7 @@ def data_overall_explanations(request):
     """
     setting = request.data["IMAGE_SET_SETTING"]
     session_id = request.data["session_id"]
+    print("we are here")
     if (setting == "CORRECT_PREDICTION_ONLY"):
         result = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY", session_id=session_id)[0]
     elif (setting == "ALL_IMAGES"):

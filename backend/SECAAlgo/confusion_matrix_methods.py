@@ -119,6 +119,7 @@ def get_matrix_images(class_A, class_B, session_id):
         "annotations": [],
         "confidence": []
     }
+    #print("RUN CONF", class_A, class_B)
 
     for row in images:
         cat = row.actual_image
@@ -187,7 +188,17 @@ def get_matrix_images(class_A, class_B, session_id):
 
             B_classified_as_B["confidence"] = confidence
             if len(annotations) > 0:
-                B_classified_as_B["annotations"] = annotations      
+                B_classified_as_B["annotations"] = annotations   
+
+        ### Stop when we have 10 images of each ---otherwise too slow.
+        # If we're on the diagonal, we don't need as many.
+        #if class_A == class_B:
+            #print(len(A_classified_as_A["images"]))
+        #    if len(A_classified_as_A["images"]) > 10:
+        #        break
+        #else:
+        #    if (len(A_classified_as_A["images"]) > 10) and (len(B_classified_as_B["images"]) > 10) and (len(A_classified_as_B["images"]) > 10) and (len(B_classified_as_A["images"]) > 10):
+        #        break
                 
     return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,
