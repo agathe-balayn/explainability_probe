@@ -191,7 +191,7 @@ export default function Dashboard(props) {
             backgroundColor: [
                 'rgb(255, 99, 132)',
                 'rgb(54, 162, 235)',
-                'rgb(255, 205, 86)',
+                'rgb(255, 205, 86)', 
                 'rgb(0, 200, 86)'
             ],
             hoverOffset: 4,
@@ -229,7 +229,7 @@ export default function Dashboard(props) {
                         fillModalData(
                             matrixImages[key]["heatmaps"][image],
                             matrixImages[key]["images"][image],
-                            matrixImages[key]["annotations"],
+                            matrixImages[key]["annotations"][image],
                             gt,
                             label, 
                             matrixImages[key]["confidence"] 
@@ -310,11 +310,11 @@ export default function Dashboard(props) {
         })
     }
 
-    // Add the data into the matrix only once the page is loaded.
+    // Add the data into the matrix only once the page is loaded. 
     useEffect(() => {
         getMatrixData();
-        getMatrixImages(1, 2);
-        getScores(1, 2); // Attempt to already have 1 cell selected
+        // getMatrixImages(1, 2);
+        // getScores(1, 2); // Attempt to already have 1 cell selected
         getF1()
     }, [0]);
 
@@ -350,8 +350,6 @@ export default function Dashboard(props) {
     let [labelState, setLabelState] = useState(true);
     let [labels, setLabels] = useState(labels1);
     //Keep distinct values
-    const annotations = modalData["annotations"];
-    
 
     return (
         <div id={"entire-page"}>
@@ -394,49 +392,21 @@ export default function Dashboard(props) {
                                     {relativeData.map((x, key1) => (
                                         <tr>
                                             <th scope="row" className={"category"}>{categories[key1]}</th>
-                                            {x.map((item, key2) => (key1 !== key2) ? (
-                                                <td className={"off-diagonal"} id={"elem" + item}>
+                                            {x.map((item, key2) => (
+                                                <td className={(key1 !== key2) ? "off-diagonal" : "diagonal-cell"} id={"elem" + item}>
                                                     <div>
                                                         <button type={"button"} className={"button"} id={"elem" + item}
                                                             onClick={() => {
                                                                 getMatrixImages(key1, key2);
-                                                                getScores(key1, key2);
+                                                                // getScores(key1, key2);
                                                                 getBinaryData(key1, key2);
                                                             }}>{item}%
-                                                        </button>
-                                                    </div>
-                                                    <div>
-                                                        <button type={"button"} className={"button"} id={"elem" + item}
-                                                            style={{"fontSize": "10px"}} onClick={() => {
-                                                                getMatrixImages(key1, key2);
-                                                                getScores(key1, key2);
-                                                                getBinaryData(key1, key2);
-                                                            }}>{absoluteData[key1][key2] + " / " + totalImages}
+                                                            <br></br>
+                                                            <span style={{"fontSize": "10px"}}>{absoluteData[key1][key2] + " / " + totalImages}</span>
                                                         </button>
                                                     </div>
                                                 </td>
-                                                ) : (
-                                                    <td className={"diagonal-cell"} id={"elem" + item}>
-                                                        <div>
-                                                            <button type={"button"} className={"button"} id={"elem" + item}
-                                                                onClick={() => {
-                                                                    getMatrixImages(key1, key2);
-                                                                    getScores(key1, key2);
-                                                                    getBinaryData(key1, key2);
-                                                                }}>{item}%
-                                                            </button>
-                                                        </div>
-                                                        <div>
-                                                            <button type={"button"} className={"button"} id={"elem" + item}
-                                                            style={{"fontSize": "10px"}} onClick={() => {
-                                                                    getMatrixImages(key1, key2);
-                                                                    getScores(key1, key2);
-                                                                    getBinaryData(key1, key2);
-                                                                }}>{absoluteData[key1][key2] + " / " + totalImages}
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                )
+                                                ) 
                                             )}
                                         </tr>
                                     ))}
@@ -507,31 +477,31 @@ export default function Dashboard(props) {
                     </div>
                 </Col>
             </Row>
-            <Modal show={showModal} onHide={() => {setShowModal(false)}}      >
+            <Modal size={'xl'} show={showModal} onHide={() => {setShowModal(false)}}      >
                         <Modal.Header closeButton closeLabel="close window">
                         <h4>Details for {modalData["gt"]}</h4>
                         </Modal.Header>
                         <Modal.Body>
-                            <div className="d-flex">
                                 <div className="row">
                                     <div className="col-12">
                                         <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"]})</p>
                                     </div>
-                                    <div className="col-12">
+                                </div>
+                                <div className="row">
+                                    <div className="col d-flex flex-column align-items-center">
                                         <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
                                         <p>original image</p>
                                     </div>
-                                    <div className="col-12">
+                                    <div className="col d-flex flex-column align-items-center">
                                         <img src={'data:image/jpeg;base64,' + modalData["heatmap"]}></img>
                                         <p>heatmap</p>
                                     </div>
                                 </div>
-                            </div>
                             {
                             modalData["annotations"] !== undefined && modalData["annotations"].length > 0 ?
                             <>
                             <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
-                            <ul>
+                            <ul style={{columns: 3}}>
                                 {modalData["annotations"].map(a => <li>{a}</li>)}
                             </ul>
                             </>
