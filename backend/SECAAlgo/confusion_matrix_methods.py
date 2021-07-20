@@ -2,13 +2,14 @@ from rest_framework import status
 from .models import Sessions, Images, Annotations, Notes
 from django.core.exceptions import FieldError
 from UserSECA.models import SECAUser
-
+from django.db.models import Q
 import random
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import base64
 import os
+import json
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from sklearn.metrics import f1_score
@@ -82,6 +83,10 @@ def get_matrix_images(class_A, class_B, session_id):
     """
     try:
         predictions = Sessions.objects.filter(id=session_id)[0]
+        # Query images for this confusion matrix, with conditions for the actual and predicted class, respectively
+        images = predictions.images.filter( (Q(actual_image=class_A) & Q(predicted_image=class_B)) |
+        (Q(actual_image=class_A) & Q(predicted_image=class_A)) | (Q(actual_image=class_B) & Q(predicted_image=class_A)
+         | (Q(actual_image=class_B) & Q(predicted_image=class_B)))  )
 
     except IndexError:
         return "You are trying to get information from a prediction set that does not exist", \
@@ -115,12 +120,12 @@ def get_matrix_images(class_A, class_B, session_id):
         "confidence": []
     }
 
-    for row in predictions.images.all():
+    for row in images:
         cat = row.actual_image
         pre = row.predicted_image
         image_name = row.image_name
-        confidence = row.confidence
-        annotations = set(row.annotations_set.values_list('annotation')[::1])
+        confidence = json.loads(row.confidence.replace("\'", "\""))[pre]
+        annotations = set(row.annotations_set.values_list('annotation'))
 
         if cat == class_A and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
