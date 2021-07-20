@@ -10,7 +10,7 @@ import pandas as pd
 from rest_framework import status
 from .serializer import UniversalSerializer, SerializerClassNotFoundException
 from django.core.exceptions import FieldError
-from .pipeline import execute_rule_mining_pipeline
+from .pipeline import execute_rule_mining_pipeline, execute_image_query_pipeline
 
 
 def query_classes(input):
@@ -279,6 +279,168 @@ def query_rules(input):
 
         # executes the rule mining pipeline using the filtered data
         res, supp_conf, stat = execute_rule_mining_pipeline(image_set_setting=image_setting,
+                                                            binary_task_classes=binary_task_classes,
+                                                            max_antecedent_length=max_ant_length,
+                                                            min_support_score=min_support_score,
+                                                            min_lift_score=min_lift_score,
+                                                            min_confidence_score=min_confidence_score,
+                                                            filter_concepts=filtered_concepts, or_queries=or_sets,
+                                                            desired_classes=desired_classes, or_exclude=exclude_or,
+                                                            or_not_query=or_not_divided,
+                                                            exclude_concepts=excluded_concepts,
+                                                            class_selection=class_selection,
+                                                            predicted_class=predicted_class,
+                                                            not_predicted_class=not_predicted_class,
+                                                            exclude_predicted_classes=exclude_predicted_class,
+                                                            exclude_true_classes=exclude_true_class,
+                                                            only_true_class=only_true_class,
+                                                            only_predicted_class=only_predicted_class,
+                                                            session_id=session_id)
+        return res, stat
+
+    # If there is a value error thrown, it will catch it. Currently there are no errors that would realistically occur
+    # however, but if we find cases where we want to catch an error here we can add them below
+    except ValueError:
+        return {
+                   'There were no results for that combination in the binary matrix'
+               }, status.HTTP_206_PARTIAL_CONTENT
+
+
+
+def query_images(input):
+    session_id = -1
+    to_filter = []
+    or_queries = []
+    to_exclude = []
+    or_exclude = []
+    or_not_query = []
+    binary_task_classes = []
+    desired_classes = ["ALL"]
+    class_selection = ["ALL"]
+    predicted_class = ["ALL"]
+    not_predicted_class = ["ALL"]
+    exclude_predicted_class = []
+    only_predicted_class = ["ALL"]
+    exclude_true_class = []
+    only_true_class = ["ALL"]
+    image_setting = None
+
+    # By default the settings here are the default settings we have given for the rule mining pipeline
+    max_ant_length = 3
+    min_support_score = 0.000001
+    min_lift_score = 0.2
+    min_confidence_score = 0.3
+    mistake_found = False
+    mistakes = []
+    for point in input:
+
+        # essentially making a switch statement for all the possible inputs for the query. We cannot make a true
+        # match case statement because that was introduced in python 3.10 and I believe we are running this in
+        # Python 3.9.4 - Other alternatives to switch statements exist but this is the most clear to edit in the future
+
+        if point == "image_setting":
+            if input[point] == "all":
+                image_setting = "ALL_IMAGES"
+
+            elif input[point] == "correct_only":
+                image_setting = "CORRECT_PREDICTION_ONLY"
+
+            elif input[point] == "incorrect_only":
+                image_setting = "WRONG_PREDICTION_ONLY"
+
+            elif input[point] == "binary_matrix":
+                image_setting = "BINARY_MATRIX_VIEW"
+            continue
+
+        elif point == "session_id":
+            session_id = input[point]
+
+        elif point == "exclude":
+            to_exclude = input[point]
+
+        elif point == "or_exclude":
+            or_exclude = input[point]
+
+        elif point == "or_not_query":
+            or_not_query = input[point]
+
+        elif point == "include":
+            to_filter = input[point]
+
+        elif point == "or_query":
+            or_queries = input[point]
+
+        elif point == "add_class":
+            binary_task_classes = input[point]
+
+        elif point == "max_antecedent_length":
+            max_ant_length = input[point]
+
+        elif point == "min_support_score":
+            min_support_score = input[point]
+
+        elif point == "min_lift_score":
+            min_lift_score = input[point]
+
+        elif point == "min_confidence_score":
+            min_confidence_score = input[point]
+
+        elif point == "true_class":
+            desired_classes = input[point]
+
+        elif point == "class_selection":
+            class_selection = input[point]
+
+        elif point == "predicted_class":
+            predicted_class = input[point]
+
+        elif point == "not_predicted_class":
+            not_predicted_class = input[point]
+
+        elif point == "exclude_predicted_class":
+            exclude_predicted_class = input[point]
+
+        elif point == "exclude_true_class":
+            exclude_true_class = input[point]
+
+        elif point == "only_true_class":
+            only_true_class = input[point]
+
+        elif point == "only_predicted_class":
+            only_predicted_class = input[point]
+
+        else:
+            mistake_found = True
+            mistakes.append(point)
+
+    if image_setting is None:
+        image_setting = "BINARY_MATRIX_VIEW"
+
+    if mistake_found:
+        return {
+                   "a given input was invalid. Please set the following arguments into the correct format: ": mistakes
+               }, status.HTTP_417_EXPECTATION_FAILED
+
+    if session_id < 0:
+        return {
+            "you did not input a valid session id, there will be no information for this session"
+        }, status.HTTP_417_EXPECTATION_FAILED
+
+    try:
+        # Create a frozenset of all the names in the queries such as 'bed AND table AND window',
+        # to properly filter them out for all rule mining and such. This should be done for all the required sets.
+        filtered_concepts = split_ands(to_filter)
+        excluded_concepts = split_ands(to_exclude)
+        or_sets = split_ands(or_queries)
+        exclude_or = split_ands(or_exclude)
+        or_not_divided = split_ands(or_not_query)
+
+        # If there are no filtered concepts, set it to get all results
+        if len(filtered_concepts) == 0 and len(or_sets) == 0 and len(excluded_concepts) == 0 and len(or_exclude) == 0 \
+                and len(or_not_divided) == 0:
+            filtered_concepts = "ALL"
+        # executes the rule mining pipeline using the filtered data
+        res, stat = execute_image_query_pipeline(image_set_setting=image_setting,
                                                             binary_task_classes=binary_task_classes,
                                                             max_antecedent_length=max_ant_length,
                                                             min_support_score=min_support_score,
