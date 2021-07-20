@@ -14,6 +14,197 @@ import numpy as np
 import graphviz
 
 
+from itertools import combinations
+import numpy as np
+import pandas as pd
+
+
+def minimum_association_rules(df, metric="confidence",
+                      min_threshold=0.8, support_only=False, list_consequents=[]):
+    """Generates a DataFrame of association rules including the
+    metrics 'score', 'confidence', and 'lift'
+    Parameters
+    -----------
+    df : pandas DataFrame
+      pandas DataFrame of frequent itemsets
+      with columns ['support', 'itemsets']
+    metric : string (default: 'confidence')
+      Metric to evaluate if a rule is of interest.
+      **Automatically set to 'support' if `support_only=True`.**
+      Otherwise, supported metrics are 'support', 'confidence', 'lift',
+      'leverage', and 'conviction'
+      These metrics are computed as follows:
+      - support(A->C) = support(A+C) [aka 'support'], range: [0, 1]
+      - confidence(A->C) = support(A+C) / support(A), range: [0, 1]
+      - lift(A->C) = confidence(A->C) / support(C), range: [0, inf]
+      - leverage(A->C) = support(A->C) - support(A)*support(C),
+        range: [-1, 1]
+      - conviction = [1 - support(C)] / [1 - confidence(A->C)],
+        range: [0, inf]
+    min_threshold : float (default: 0.8)
+      Minimal threshold for the evaluation metric,
+      via the `metric` parameter,
+      to decide whether a candidate rule is of interest.
+    support_only : bool (default: False)
+      Only computes the rule support and fills the other
+      metric columns with NaNs. This is useful if:
+      a) the input DataFrame is incomplete, e.g., does
+      not contain support values for all rule antecedents
+      and consequents
+      b) you simply want to speed up the computation because
+      you don't need the other metrics.
+    Returns
+    ----------
+    pandas DataFrame with columns "antecedents" and "consequents"
+      that store itemsets, plus the scoring metric columns:
+      "antecedent support", "consequent support",
+      "support", "confidence", "lift",
+      "leverage", "conviction"
+      of all rules for which
+      metric(rule) >= min_threshold.
+      Each entry in the "antecedents" and "consequents" columns are
+      of type `frozenset`, which is a Python built-in type that
+      behaves similarly to sets except that it is immutable
+      (For more info, see
+      https://docs.python.org/3.6/library/stdtypes.html#frozenset).
+    Examples
+    -----------
+    For usage examples, please see
+    http://rasbt.github.io/mlxtend/user_guide/frequent_patterns/association_rules/
+    """
+
+    # check for mandatory columns
+    if not all(col in df.columns for col in ["support", "itemsets"]):
+        raise ValueError("Dataframe needs to contain the\
+                         columns 'support' and 'itemsets'")
+
+    def conviction_helper(sAC, sA, sC):
+        confidence = sAC/sA
+        conviction = np.empty(confidence.shape, dtype=float)
+        if not len(conviction.shape):
+            conviction = conviction[np.newaxis]
+            confidence = confidence[np.newaxis]
+            sAC = sAC[np.newaxis]
+            sA = sA[np.newaxis]
+            sC = sC[np.newaxis]
+        conviction[:] = np.inf
+        conviction[confidence < 1.] = ((1. - sC[confidence < 1.]) /
+                                       (1. - confidence[confidence < 1.]))
+
+        return conviction
+
+    # metrics for association rules
+    metric_dict = {
+        "antecedent support": lambda _, sA, __: sA,
+        "consequent support": lambda _, __, sC: sC,
+        "support": lambda sAC, _, __: sAC,
+        "confidence": lambda sAC, sA, _: sAC/sA,
+        "lift": lambda sAC, sA, sC: metric_dict["confidence"](sAC, sA, sC)/sC,
+        "leverage": lambda sAC, sA, sC: metric_dict["support"](
+             sAC, sA, sC) - sA*sC,
+        "conviction": lambda sAC, sA, sC: conviction_helper(sAC, sA, sC)
+        }
+
+    columns_ordered = ["antecedent support", "consequent support",
+                       "support",
+                       "confidence", "lift",
+                       "leverage", "conviction"]
+
+    # check for metric compliance
+    if support_only:
+        metric = 'support'
+    else:
+        if metric not in metric_dict.keys():
+            raise ValueError("Metric must be 'confidence' or 'lift', got '{}'"
+                             .format(metric))
+
+    # get dict of {frequent itemset} -> support
+    keys = df['itemsets'].values
+    values = df['support'].values
+    frozenset_vect = np.vectorize(lambda x: frozenset(x))
+    frequent_items_dict = dict(zip(frozenset_vect(keys), values))
+
+    # prepare buckets to collect frequent rules
+    rule_antecedents = []
+    rule_consequents = []
+    rule_supports = []
+
+    # iterate over all frequent itemsets
+    for k in frequent_items_dict.keys():
+        
+        if len(k.intersection(list_consequents)) > 0:
+            #print("consequenct")
+            #print("k", k)
+            sAC = frequent_items_dict[k]
+            # to find all possible combinations
+            for idx in range(len(k)-1, 0, -1):
+                #print("idx", idx)
+                # of antecedent and consequent
+                for c in combinations(k, r=idx):
+                    #print("c", c)
+                    antecedent = frozenset(c)
+                    consequent = k.difference(antecedent)
+                    if len(consequent.intersection(list_consequents)) > 0:
+                        #print("good")
+
+                        if support_only:
+                            # support doesn't need these,
+                            # hence, placeholders should suffice
+                            sA = None
+                            sC = None
+
+                        else:
+                            try:
+                                #print("jkfjdkjg")
+                                sA = frequent_items_dict[antecedent]
+                                sC = frequent_items_dict[consequent]
+                                #print("got sa, sc")
+                            except KeyError as e:
+                                s = (str(e) + 'You are likely getting this error'
+                                              ' because the DataFrame is missing '
+                                              ' antecedent and/or consequent '
+                                              ' information.'
+                                              ' You can try using the '
+                                              ' `support_only=True` option')
+                                raise KeyError(s)
+                            # check for the threshold
+                        #print("score")
+                        score = metric_dict[metric](sAC, sA, sC)
+                        #if score >= min_threshold:
+                        rule_antecedents.append(antecedent)
+                        rule_consequents.append(consequent)
+                        rule_supports.append([sAC, sA, sC])
+
+    # check if frequent rule was generated
+    if not rule_supports:
+        return pd.DataFrame(
+            columns=["antecedents", "consequents"] + columns_ordered)
+
+    else:
+        # generate metrics
+        rule_supports = np.array(rule_supports).T.astype(float)
+        df_res = pd.DataFrame(
+            data=list(zip(rule_antecedents, rule_consequents)),
+            columns=["antecedents", "consequents"])
+
+        if support_only:
+            sAC = rule_supports[0]
+            for m in columns_ordered:
+                df_res[m] = np.nan
+            df_res['support'] = sAC
+
+        else:
+            sAC = rule_supports[0]
+            sA = rule_supports[1]
+            sC = rule_supports[2]
+            for m in columns_ordered:
+                df_res[m] = metric_dict[m](sAC, sA, sC)
+
+        return df_res
+
+
+
+
 def fit_classifier(semantic_feature_representation,
                    significant_semantic_features=None,
                    classifier='decision-tree',
@@ -318,18 +509,39 @@ def get_rules(semantic_feature_representation,
         semantic_feature_representation)
     print("starting the frequent itemsets bit")
     df = pd.DataFrame(te_ary, columns=te.columns_)
+    print("run a priori")
     frequent_itemsets = apriori(df,
                                 min_support=min_support_score,
                                 use_colnames=True)
     #if len(frequent_itemsets) > 10000:
     #print(frequent_itemsets)
     # Keep itemsets with labels, and a number of others.
-    itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: True if len(
-                             f.intersection(list_consequents)) > 0 else False), :]
-    other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if len(
-                             f.intersection(list_consequents)) > 0 else True), :].nlargest(min(25000, len(frequent_itemsets) - len(itemsets_labels)),'support')
+    print("found frequent_itemsets", frequent_itemsets)
+    #itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: True if ((len(
+                             #f.intersection(list_consequents)) > 0) and (len(f.intersection(list_antecedents)) <0)) else False), :]
+    itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if ( (len(f.intersection(list_consequents)) <1)) else True), :]
+    other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if ( (len(
+                             f.intersection(list_consequents)) > 0)) else True), :]#.nlargest(min(25000, len(frequent_itemsets) - len(itemsets_labels)),'support')
+    #other_sets["nb_item"] = other_sets["itemsets"].apply(lambda x: len(x))
+    #other_sets = other_sets[itemsets_labels["nb_item"] < 6]
+    #other_sets = other_sets[["itemsets", "support"]]
+    other_sets = other_sets.loc[other_sets["itemsets"].apply(lambda x: False if len(x) > 10 else True )]
 
-    frequent_itemsets = pd.concat([itemsets_labels, other_sets])#frequent_itemsets.nlargest(min(20000, len(frequent_itemsets)),'support')
+    #itemsets_labels["nb_item"] = itemsets_labels["itemsets"].apply(lambda x: len(x))
+    #itemsets_labels = itemsets_labels[itemsets_labels["nb_item"] < 6]
+    #itemsets_labels = itemsets_labels[["itemsets", "support"]]
+    itemsets_labels = itemsets_labels.loc[itemsets_labels["itemsets"].apply(lambda x: False if len(x) > 10 else True )]
+
+
+    frequent_itemsets = pd.concat([other_sets,itemsets_labels])#itemsets_labels.nlargest(min(2000, len(itemsets_labels)),'support') #pd.concat([other_sets,itemsets_labels])#frequent_itemsets.nlargest(min(20000, len(frequent_itemsets)),'support')
+    
+    k = 10
+    while ((len(frequent_itemsets) > 50000) and (k > 4)):
+        frequent_itemsets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda x: False if len(x) > k else True )]
+        k = k-1
+        print(k, len(frequent_itemsets))
+
+    #frequent_itemsets = frequent_itemsets[["itemsets", "support"]]
     #print(frequent_itemsets)
     # frequent_itemsets.to_json('frequent_itemsets_0.json')
     # frequent_itemsets.to_csv('frequent_itemsets_0.csv', index=False)
@@ -339,71 +551,164 @@ def get_rules(semantic_feature_representation,
 
     frequent_itemsets['itemsets'] = frequent_itemsets['itemsets'].apply(
         lambda x: frozenset(x))
-    # Post filter the rules, for instance to use two metrics
-    rules = association_rules(frequent_itemsets,
-                              metric="lift",
-                              min_threshold=min_lift_score)
-    #print("ant", len(list_antecedents))
-    if len(list_antecedents) > 0:
-        rules.replace([np.inf, -np.inf], 999999, inplace=True)
-        #print(rules)
-        # filter rules, and produce list of wanted rules
-        rules = rules.loc[
-                         rules['consequents'].apply(lambda f: False if len(
-                             f.intersection(list_antecedents)) > 0 else True), :]
-        rules = rules.loc[rules['antecedents'].apply(
-            lambda f: False
-            if len(f.intersection(list_consequents)) > 0 else True)]
-        #print("output222", len(rules))
+    print(frequent_itemsets)
 
-    if len(rules) < 20:
-        rules = association_rules(frequent_itemsets,
-                              metric="lift",
-                              min_threshold=0.0)
-    if len(list_antecedents) > 0:
-        rules.replace([np.inf, -np.inf], 999999, inplace=True)
-        # filter rules, and produce list of wanted rules
-        rules = rules.loc[
-                         rules['consequents'].apply(lambda f: False if len(
-                             f.intersection(list_antecedents)) > 0 else True), :]
-        rules = rules.loc[rules['antecedents'].apply(
-            lambda f: False
-            if len(f.intersection(list_consequents)) > 0 else True)]
-    if len(rules) < 20:
-        frequent_itemsets = apriori(df,
-                                min_support=0.00001,
-                                use_colnames=True)
-        itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: True if len(
-                             f.intersection(list_consequents)) > 0 else False), :]
-        other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if len(
-                                 f.intersection(list_consequents)) > 0 else True), :].nlargest(min(20000, len(frequent_itemsets) - len(itemsets_labels)),'support')
 
-        frequent_itemsets = pd.concat([itemsets_labels, other_sets])
-        frequent_itemsets['itemsets'] = frequent_itemsets['itemsets'].apply(
-            lambda x: frozenset(x))
+    if len(list(list_consequents)) > 2:
+        print("start rules")
         # Post filter the rules, for instance to use two metrics
         rules = association_rules(frequent_itemsets,
                                   metric="lift",
-                                  min_threshold=0.0)
+                                  min_threshold=min_lift_score)
+        
+        #print(list_consequents)
+        #print((rules.columns))
+        #print("ant", len(list_antecedents))
+
         if len(list_antecedents) > 0:
             rules.replace([np.inf, -np.inf], 999999, inplace=True)
+            
             # filter rules, and produce list of wanted rules
             rules = rules.loc[
                              rules['consequents'].apply(lambda f: False if len(
                                  f.intersection(list_antecedents)) > 0 else True), :]
             rules = rules.loc[rules['antecedents'].apply(
-                lambda f: False
-                if len(f.intersection(list_consequents)) > 0 else True)]
+                lambda f: False if len(f.intersection(list_consequents)) > 0 else True)]
+            #print("output222", len(rules))
+        print("WE found: " , len(rules))
+    if len(list(list_consequents)) <= 2:
+        """
+        if len(rules) < 20:
+            rules = association_rules(frequent_itemsets,
+                              metric="lift",
+                              min_threshold=0.000001)
+            print(list_consequents)
+            print(len(rules))
+            #print("ant", len(list_antecedents))
+
+            if len(list_antecedents) > 0:
+                rules.replace([np.inf, -np.inf], 999999, inplace=True)
+                print(rules['consequents'].apply(lambda f: len(
+                                     f.intersection(list_antecedents))))
+                # filter rules, and produce list of wanted rules
+                rules = rules.loc[
+                                 rules['consequents'].apply(lambda f: False if len(
+                                     f.intersection(list_antecedents)) > 0 else True), :]
+                rules = rules.loc[rules['antecedents'].apply(
+                    lambda f: False if len(f.intersection(list_consequents)) > 0 else True)]
+                #print("output222", len(rules))
+            print("WE found: " , len(rules))
+        if len(rules) < 20:
+        """
+        print("let's get rules")
+        rules = minimum_association_rules(frequent_itemsets,
+                              metric="lift",
+                              min_threshold=0.01, list_consequents=list_consequents)
+        #print(rules)
+        rules = rules.loc[rules['consequents'].apply(lambda f: False if len(
+                                     f.intersection(list_antecedents)) > 0 else True), :]
+        rules = rules.loc[rules['antecedents'].apply(
+                    lambda f: False if len(f.intersection(list_consequents)) > 0 else True)]
+        print("we found ", len(rules), " rules")
+
+    else:
+        if len(rules) < 500:
+            print("compute rules again")
+            """
+            frequent_itemsets = apriori(df,
+                                    min_support=0.05,
+                                    use_colnames=True)
+            itemsets_labels = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if ( (len(f.intersection(list_consequents)) <1)) else True), :]
+            other_sets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda f: False if ( (len(
+                                     f.intersection(list_consequents)) > 0)) else True), :]#.nlargest(min(25000, len(frequent_itemsets) - len(itemsets_labels)),'support')
+            
+            other_sets = other_sets.loc[other_sets["itemsets"].apply(lambda x: False if len(x) > 10 else True )]
+
+            itemsets_labels = itemsets_labels.loc[itemsets_labels["itemsets"].apply(lambda x: False if len(x) > 10 else True )]
+
+
+            frequent_itemsets = pd.concat([other_sets,itemsets_labels])#itemsets_labels.nlargest(min(2000, len(itemsets_labels)),'support') #pd.concat([other_sets,itemsets_labels])#frequent_itemsets.nlargest(min(20000, len(frequent_itemsets)),'support')
+            
+            k = 10
+            while ((len(frequent_itemsets) > 50000) and (k > 4)):
+                frequent_itemsets = frequent_itemsets.loc[frequent_itemsets["itemsets"].apply(lambda x: False if len(x) > k else True )]
+                k = k-1
+                print(k, len(frequent_itemsets))
+
+            frequent_itemsets['itemsets'] = frequent_itemsets['itemsets'].apply(
+                lambda x: frozenset(x))
+            print(frequent_itemsets)
+            """
+            # Post filter the rules, for instance to use two metrics
+            print("compute rules....")
+            rules = association_rules(frequent_itemsets,
+                                      metric="lift",
+                                      min_threshold=0.05)
+            if len(list_antecedents) > 0:
+                rules.replace([np.inf, -np.inf], 999999, inplace=True)
+                # filter rules, and produce list of wanted rules
+                rules = rules.loc[
+                                 rules['consequents'].apply(lambda f: False if len(
+                                     f.intersection(list_antecedents)) > 0 else True), :]
+                rules = rules.loc[rules['antecedents'].apply(
+                    lambda f: False
+                    if len(f.intersection(list_consequents)) > 0 else True)]
 
 
     rules["antecedent_len"] = rules["antecedents"].apply(lambda x: len(x))
     rules = rules[(rules['antecedent_len'] >= 0)
                   & (rules['confidence'] > min_confidence_score) &
                   (rules['lift'] > min_lift_score)]
-    if len(rules) < 20:
-        rules = rules[(rules['antecedent_len'] >= 0)
-                  & (rules['confidence'] > 0.1) &
-                  (rules['lift'] > 0.1)]
+    rules_temp = rules.copy()
+    while len(rules_temp) > 500:
+        print(len(rules_temp))
+        min_confidence_score += 0.1
+        min_lift_score += 0.1
+        rules_temp = rules_temp[(rules_temp['antecedent_len'] >= 0)
+                  & (rules_temp['confidence'] > min_confidence_score) &
+                  (rules_temp['lift'] > min_lift_score)]
+    print(len(rules_temp))
+    if len(rules_temp) < 100:
+        print(len(rules))
+        rules_temp = rules[(rules['antecedent_len'] >= 0)
+                  & (rules['confidence'] > min_confidence_score - 0.1) &
+                  (rules['lift'] > min_lift_score - 0.1)]
+        print("corrdcted", len(rules_temp))
+        rules_temp_temp = rules_temp.copy()
+        min_confidence_score = min_confidence_score - 0.1
+        min_lift_score = min_lift_score - 0.1
+        while len(rules_temp) > 500:
+            print("hhh", len(rules_temp))
+            min_confidence_score += 0.005
+            min_lift_score += 0.005
+            rules_temp = rules_temp[(rules_temp['antecedent_len'] >= 0)
+                      & (rules_temp['confidence'] > min_confidence_score) &
+                      (rules_temp['lift'] > min_lift_score)]
+        if len(rules_temp) < 20:
+            rules = rules_temp_temp[(rules_temp_temp['antecedent_len'] >= 0)
+                  & (rules_temp_temp['confidence'] > min_confidence_score - 0.005) &
+                  (rules_temp_temp['lift'] > min_lift_score - 0.005)]
+        else:
+            rules = rules_temp
+        del rules_temp, rules_temp_temp
+
+        if len(list(list_consequents)) <= 2:
+            if len(rules) > 100:
+                rules = rules.nlargest(100,'support')
+        else:
+            if len(rules) > 500:
+                rules = rules.nlargest(500,'support')
+        print("final", len(rules))
+
+    else:
+        rules = rules_temp
+        #rules = rules_temp
+        del rules_temp
+
+    #if len(rules) < 20:
+    #    rules = rules[(rules['antecedent_len'] >= 0)
+    #              & (rules['confidence'] > 0.1) &
+    #              (rules['lift'] > 0.1)]
 
     print("Data mining rules: ", rules)
     return rules, frequent_itemsets

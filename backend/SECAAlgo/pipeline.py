@@ -231,7 +231,7 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
         # If there is nothing in the class, there is no relevant info so we remove it
         else:
             del concepts[col]
-
+    #print("res", res)
     return res
 
 
@@ -439,7 +439,9 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
     # prepare data mining input
     modified_representation, list_antecedents, list_consequents = prepare_data_mining_input(
         structured_representation)
+    print("consequent", list_consequents)
     # extract rules (this method takes the longest time)
+
     rules, frequent_itemsets = get_rules(modified_representation, min_support_score,
                                          min_lift_score, min_confidence_score, list_antecedents=list_antecedents, list_consequents=list_consequents)
     #print("output", rules)
@@ -558,6 +560,7 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
         antecedents.append(antecedent)
         supp_conf.append((antecedent, row[1].get(
             "support"), row[1].get("confidence")))
+    print(len(data_mining_rules_filtered))
     return data_mining_rules_filtered, antecedents, supp_conf
 
 
@@ -836,6 +839,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     image_list, stat = retrieve_images(
         image_set_setting, binary_task_classes, session_id)
     #print(image_list)
+    #print(image_list)
     if stat != status.HTTP_200_OK:
         return image_list, stat
 
@@ -854,6 +858,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         filter_concepts=filter_concepts, or_queries=or_queries, or_exclude=or_exclude,
         or_not_query=or_not_query, exclude_concepts=exclude_concepts)
     #print(data_mining_rules)
+    print("NB rules: ", len(data_mining_rules))
 
     if return_setting == "RULES_ONLY":  # if the user only wants the data mining rules
         return data_mining_rules.to_dict('records'), [], status.HTTP_200_OK
@@ -870,7 +875,6 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         return semantic_feature_stats_dict, [], status.HTTP_200_OK
 
     # 6. Compute the % values for the rules/concepts
-
     # Combines the concepts and the rule sets together so the concept and rule classifications can take them as a nice,
     # structured input
     filter_single_concepts = []
@@ -884,6 +888,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
 
     # If we want to remove a 'base' concept, we need to make sure that it is not in this list, so we check
     # if it is in the list. If so, we remove it
+    print("filter")
     for element_to_remove in exclude_concepts:
         if element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(element_to_remove)
@@ -891,6 +896,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     for for_element_to_remove in or_exclude:
         if for_element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(for_element_to_remove)
+    print(structured_representation_rule_mining)
 
     concept_and_rule_classifications = get_concept_and_rule_classifications(structured_representation_rule_mining,
                                                                             semantic_feature_stats_dict,

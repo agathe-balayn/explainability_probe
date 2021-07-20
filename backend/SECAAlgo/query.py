@@ -145,6 +145,7 @@ def query_rules(input):
     :param input: The incoming data from a request in a JSON format, as a python dict
     :return: The filtered rules and concepts, along with a HTTP status for if it was successful or not.
     """
+    print("query rules settings", input)
     session_id = -1
     to_filter = []
     or_queries = []
@@ -163,9 +164,9 @@ def query_rules(input):
     image_setting = None
 
     # By default the settings here are the default settings we have given for the rule mining pipeline
-    max_ant_length = 3
-    min_support_score = 0.000001
-    min_lift_score = 0.2
+    max_ant_length = 10
+    min_support_score = 0.15
+    min_lift_score = 0.01
     min_confidence_score = 0.3
     mistake_found = False
     mistakes = []
@@ -476,7 +477,9 @@ def universal_query(input):
     :param input: the incoming data from the JSON string, as a python dict
     :return: the output of whatever query the user wanted, either rules or classes in their own format
     """
+    print(input)
     try:
+        print(input["query_type"])
         if input["query_type"] == "class":
             del input["query_type"]
             return query_classes(input)
