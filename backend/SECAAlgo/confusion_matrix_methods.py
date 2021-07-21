@@ -140,7 +140,7 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = base64.b64encode(img).decode('utf-8')
                 A_classified_as_A["heatmaps"].append(img)
             
-            A_classified_as_A["confidence"] = confidence
+            A_classified_as_A["confidence"].append(confidence)
             if len(annotations) > 0:
                 A_classified_as_A["annotations"].append(annotations)
 
@@ -156,7 +156,7 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = base64.b64encode(img).decode('utf-8')
                 A_classified_as_B["heatmaps"].append(img)
             
-            A_classified_as_B["confidence"] = confidence
+            A_classified_as_B["confidence"].append(confidence)
             if len(annotations) > 0:
                 A_classified_as_B["annotations"] = annotations
 
@@ -171,7 +171,7 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = base64.b64encode(img).decode('utf-8')
                 B_classified_as_A["heatmaps"].append(img)
 
-            B_classified_as_A["confidence"] = confidence
+            B_classified_as_A["confidence"].append(confidence)
             if len(annotations) > 0:
                 B_classified_as_A["annotations"].append(annotations)
 
@@ -186,7 +186,7 @@ def get_matrix_images(class_A, class_B, session_id):
                 img = base64.b64encode(img).decode('utf-8')
                 B_classified_as_B["heatmaps"].append(img)
 
-            B_classified_as_B["confidence"] = confidence
+            B_classified_as_B["confidence"].append(confidence)
             if len(annotations) > 0:
                 B_classified_as_B["annotations"] = annotations   
 
