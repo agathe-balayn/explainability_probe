@@ -85,6 +85,8 @@ class QueryClassificationFormulas extends React.Component {
      */
 
     sortConceptsBy = (data, by) => {
+        console.log(data)
+        console.log(by)
         let items = Object.keys(data).map(function(key) {
             return [key, data[key]];
         });
@@ -597,12 +599,13 @@ class QueryClassificationFormulas extends React.Component {
 
                             <div>
                                 <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px"}}>
+                                {(rule_data[i].innerArray[e].percentage_correct * 100).toFixed(2).toString() + "%"}
                                 </div>
 
                                 <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px"}}>
                                 </div>
 
-                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present ))).toString() + "px"}}>
+                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px"}}>
 
                                 </div>
                             </div>

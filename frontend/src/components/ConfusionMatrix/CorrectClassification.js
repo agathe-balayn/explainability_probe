@@ -17,7 +17,7 @@ export default function CorrectClassification(props) {
     let [ruleTypicality, setRuleTypicality] = useState([]);
     let [conceptTypicality, setConceptTypicality] = useState([]);
     const [matrixImages, setMatrixImages] = useState([])
-    const session_id = useState(JSON.parse(sessionStorage.getItem("problem")))
+    const session_id = useState(JSON.parse(sessionStorage.getItem("session")))
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
     );
@@ -230,43 +230,7 @@ export default function CorrectClassification(props) {
                 <div className="upper-section">
                     <div className={"text"}>
                         <div className={"main-wrap"}>
-                            <div className={"left"}>
-                                <h2>Significant concepts in the images within this binary task</h2>
-                                <h4>Legend:</h4>
-                                <div className={"main-wrap"}>
-                                    <p id={"conceptP1"}>Percentage of correct predictions among concept-associated images</p>
-                                    <p id={"conceptP2"}>Percentage of concept-associated images in dataset</p>
-                                </div>
-                                <hr/>
-                                <div>
-                                    {
-                                        concept_data_view.map(item => (
-                                            <>
-                                                {item.view}
-                                            </>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-
-                            <div className={"right"}>
-                                <h2>Significant rules in the images within this binary task</h2>
-                                <h4> </h4>
-                                <div className={"main-wrap"}>
-                                    <p id={"ruleP1"}>Percentage of correctly classified images within rule-associated images</p>
-                                    <p id={"ruleP2"}>Percentage of concept-associated images among images with the predicted class</p>
-                                </div>
-                                <hr/>
-                                <div>
-                                    {
-                                        rule_data_view.map(item => (
-                                            <>
-                                                {item.view}
-                                            </>
-                                        ))
-                                    }
-                                </div>
-                            </div>
+                           
                         </div>
                     </div>
                 </div>

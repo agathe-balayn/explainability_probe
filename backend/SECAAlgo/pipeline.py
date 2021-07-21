@@ -801,6 +801,10 @@ def execute_basic_rule_mining_pipeline(image_set_setting, return_setting="CONCEP
     # 2. Make tabular representation with only these images
     structured_representation, semantic_features = make_tabular_representation(
         image_list, image_set_setting)
+
+    if class_selection != ["ALL"]:
+        print("filter classes")
+        structured_representation = structured_representation.loc[structured_representation["predicted_label"].isin(class_selection)]
     # a copy is made here, because structured_representation gets changed in rule mining
     rep_old = structured_representation.copy(deep=True)
 
@@ -905,11 +909,16 @@ def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONC
         structured_representation["filter_concepts"] = 1
     print(structured_representation)
 
+    if class_selection != ["ALL"]:
+        print("filter classes")
+        structured_representation = structured_representation.loc[structured_representation["predicted_label"].isin(class_selection)]
+
     # Get the scores: support antecedent, support consequent,  and lift.
     #positive_rules = structured_representation[structured_representation["filter_concepts"] == 1]
     #print(len(positive_rules))
     list_scores = []
-    list_classes = list(set(structured_representation["true_label"]))
+    list_classes = list(set(structured_representation["predicted_label"]))
+    print(list_classes)
     for class_name in list_classes:
         common_supp = len(structured_representation.loc[(structured_representation["predicted_label"] == class_name) & (structured_representation["filter_concepts"] == 1)])
         cons_sup = len(structured_representation[structured_representation["predicted_label"] == class_name])

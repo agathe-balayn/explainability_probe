@@ -75,6 +75,7 @@ def images_matrix(request):
         class_A = request.GET.get("classA")
         class_B = request.GET.get("classB")
         session_id = request.GET.get("session_id")
+        print(session_id)
     except KeyError:
         return Response("There was an error in the input parameters, not all of 'classA', 'classB' and 'session_id' "
                         "were properly included in the request.", status=status.HTTP_417_EXPECTATION_FAILED)
