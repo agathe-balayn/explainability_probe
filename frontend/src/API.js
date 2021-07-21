@@ -12,6 +12,7 @@ const matrix_data = domain + "api/SECAAlgo/Matrix/matrix";
 const matrix_images = domain + "api/SECAAlgo/Matrix/images";
 const binary_query = domain + "api/SECAAlgo/Query/uquery/";
 const query_rules_url = domain + "api/SECAAlgo/Query/query_rules/";
+const query_concept_matrix_url = domain + "api/SECAAlgo/Query/query_concept_matrix/";
 const query_specific_url = domain + "api/SECAAlgo/Query/query_specific/";
 const notes_url = domain + "api/SECAAlgo/notes"
 const expert_questions_url = domain + "api/Expert/questions/"
@@ -36,6 +37,7 @@ export {
   binary_query,
   query_rules_url,
   query_specific_url,
+  query_concept_matrix_url,
   updateTitle_url,
   notes_url,
   expert_questions_url,

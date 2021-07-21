@@ -711,7 +711,7 @@ def execute_image_query_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         structured_representation = structured_representation[structured_representation["true_label"] != exclude_true_classes[0]]
 
 
-
+    print(structured_representation)
     # Filter images based on queried concepts.
 
     # Create the column of the concepts.

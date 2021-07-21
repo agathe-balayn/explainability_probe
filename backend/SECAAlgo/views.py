@@ -166,6 +166,95 @@ def add_image(request):
     return Response("success", status=status.HTTP_200_OK)
 
 
+def twoDdf_to_df_of_df(df):
+    new_df = {}
+    for idx, item in df.iterrows():
+        new_df[idx] = item.to_dict()
+        #print(new_df[idx])
+        #print(type(item))
+    return new_df
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([
+    TokenAuthentication,
+])
+def query_concept_matrix(request):
+    print("start query concept matrix")
+    print(request.data)
+    request.data["image_setting"] = "all"
+
+
+    # Get number of target concepts per cell.
+    res, code = query_images(request.data)
+    list_labels = list(set(res["true_label"]))
+    col_names = ["ground_truth"] + list_labels
+    rows = []
+    for label_name in list_labels:
+        rows.append([label_name] + [0.0]*len(list_labels))
+    empty_matrix = pd.DataFrame(rows, columns=col_names)
+    empty_matrix.set_index("ground_truth", inplace=True)
+    #print(len(empty_matrix))
+
+    #print(res)
+    concept_df = res.loc[res["filter_concepts"] == 1]
+    count_concept = empty_matrix.copy()
+    for row_gt in list_labels:
+        for col_pred in list_labels:
+            count_concept.at[row_gt, col_pred] = len(concept_df.loc[(concept_df["true_label"] == row_gt) & (concept_df["predicted_label"] == col_pred)])
+    #print(count_concept)
+
+    # Get total number of images with the concept.
+    total_concept = len(concept_df)
+    #print(total_concept)
+
+
+
+    ### Compute top number (percentge concept among all images in the cell).
+    # Get total number of images per cell.
+    image_in_mat = empty_matrix.copy()
+    for row_gt in list_labels:
+        for col_pred in list_labels:
+            image_in_mat.at[row_gt, col_pred] = len(res.loc[(res["true_label"] == row_gt) & (res["predicted_label"] == col_pred)])
+    #print(image_in_mat)
+    #print(count_concept)
+
+    # Divide nb target concepts with total number per cell.
+    top_number = empty_matrix.copy()
+    for row_gt in list_labels:
+        for col_pred in list_labels:
+            #print(count_concept.at[row_gt, col_pred], image_in_mat.at[row_gt, col_pred], (count_concept.at[row_gt, col_pred] / image_in_mat.at[row_gt, col_pred]))
+            top_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / image_in_mat.at[row_gt, col_pred]) if image_in_mat.at[row_gt, col_pred] != 0 else 0.0
+    #print(top_number)
+    #for col in top_number:
+    #    print(top_number[col].unique())
+    #print(top_number.nunique())
+
+    ### Compute bottom number (percentage concept among all images with the target concept)
+    # Divide nb trget concepts with this total number.
+    bottom_number = empty_matrix.copy()
+    if total_concept > 0:
+        for row_gt in list_labels:
+            for col_pred in list_labels:
+                bottom_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / total_concept)
+    else:
+        bottom_number.loc[:, :] = 0.0
+    #for col in bottom_number:
+    #    print(bottom_number[col].unique())
+
+    editedResult = {}
+    #print(bottom_number)
+    editedResult["top_number"] = twoDdf_to_df_of_df(top_number.round(2))
+    editedResult["bottom_number"] = twoDdf_to_df_of_df(bottom_number.round(2))
+    print(editedResult["top_number"])
+    print(editedResult["bottom_number"])
+    return Response(editedResult, status.HTTP_200_OK)
+
+
+    
+
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([
@@ -211,7 +300,7 @@ def query_specific_images(request):
             #i['rules'] += j.annotation + ", "
         for elem in  list(set(list_annot)):
             i['rules'] += elem + ", "
-
+    #print(editedResult)
     return Response(editedResult, code)
     
     """

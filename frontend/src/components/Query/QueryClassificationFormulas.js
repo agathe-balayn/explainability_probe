@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from "axios";
 import {Input, Radio, Select, Button, Checkbox, InputNumber, Slider} from 'antd';
-import {query_rules_url} from "../../API";
+import {query_rules_url, query_concept_matrix_url} from "../../API";
 
 const { Option } = Select;
 
@@ -195,10 +195,10 @@ class QueryClassificationFormulas extends React.Component {
         if(orExclude.length > 0){
             data["or_exclude"] = orExclude
         }
-        categorization.push(document.getElementById("lsInput").value)
-        if(categorization !== [""]) {
-            data['only_true_class'] = categorization
-        }
+        //categorization.push(document.getElementById("lsInput").value)
+        //if(categorization !== [""]) {
+        //    data['only_true_class'] = [""] //categorization
+        //}
         let selectedClasses = []
         for(let i = 0; i < this.state.numClasses; i++){
             selectedClasses.push(document.getElementById("classesInput" + i).value)
@@ -220,14 +220,52 @@ class QueryClassificationFormulas extends React.Component {
      */
 
     processConfusionMatrixData (r) {
+        console.log(r.data);
         document.getElementById("placeholder").innerText = "";
-        let rules = r.data.rules
+        let matrix_top = []
+        let matrix_bottom = []
         let classes = []
+
+        // prepare list of classes.
+        for(let i in r.data.top_number){
+            //console.log(i)
+            if (!classes.includes(i)){
+                classes.push(i)
+            }
+        }
+        //console.log(classes)
+        // prepare matrix
+        let idx_row = 0
+        for(let i in classes){
+            //console.log("i")
+            //console.log(classes[i])
+            matrix_top[idx_row] = []
+            matrix_bottom[idx_row] = []
+            //console.log(matrix_top)
+            let idx_col = 0
+            for (let j in classes){
+                matrix_top[idx_row][idx_col] = []
+                matrix_top[idx_row][idx_col][0] = r.data.top_number[classes[i]][classes[j]]
+                matrix_top[idx_row][idx_col][1] = r.data.bottom_number[classes[i]][classes[j]]
+                matrix_bottom[idx_row][idx_col] = r.data.bottom_number[classes[i]][classes[j]]
+                idx_col ++
+            }
+            idx_row ++
+        }
+        console.log(matrix_top)
+        console.log(matrix_bottom)
+
+
+
+        /*
+        let rules = r.data.rules
+        //let classes = []
         let matrix = []
         //[actual, predicted]
         let images = []
         let correctFormat = []
         let index = 0;
+
         for(let i in rules){
             for(let j in rules[i]){
                 for(let z in rules[i][j]){
@@ -279,7 +317,8 @@ class QueryClassificationFormulas extends React.Component {
                 rel_matrix[row][j] = (Math.round(matrix[row][j]*10000.0/count)/100.0)
             }
         }
-        if(images.length === 0){
+        */
+        if(classes.length === 0){
             this.setState({
                 confusion_matrix: -1
             })
@@ -290,7 +329,7 @@ class QueryClassificationFormulas extends React.Component {
         }
         this.setState({
             classes : classes,
-            rel_matrix: rel_matrix
+            rel_matrix: matrix_top//rel_matrix
         })
     }
 
@@ -301,12 +340,11 @@ class QueryClassificationFormulas extends React.Component {
 
     getConfusionMatrix = (e) => {
         const errors = document.getElementsByClassName("errorDiv")[0]
-
         errors.innerHTML = ""
         let data = this.getAllData()
         axios
             .post(
-                query_rules_url,
+                query_concept_matrix_url,
                 data,
                 {
                     headers: {
@@ -387,22 +425,28 @@ class QueryClassificationFormulas extends React.Component {
                     <tr>
                         <td className={'Empty-cell'}/>
                         {this.state.classes.map(item => (
-                            <th className={'Header-cell'} scope="col" key={item.id}>{item}</th>
-                        ))}
+                            <th className={'Header-cell'} scope="col" key={item.id}>{item}</th>))}
                     </tr>
                     {this.state.rel_matrix.map((x, key1) => (
+
                         <tr>
                             <th scope="row">{this.state.classes[key1]}</th>
                             {x.map((item, key2) => key1 !== key2 ? (
                                     <td>
                                         <div>
-                                            {item}%
+                                            {item[0]}%
+                                        </div>
+                                        <div>
+                                            {item[1]}%
                                         </div>
                                     </td>
                                 ) : (
                                     <td>
                                         <div>
-                                            {item}%
+                                            {item[0]}%
+                                        </div>
+                                        <div>
+                                            {item[1]}%
                                         </div>
                                     </td>
                                 )
