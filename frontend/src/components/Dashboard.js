@@ -219,20 +219,25 @@ export default function Dashboard(props) {
     for (let key in matrixImages) {
         const [gt, label] = key.replace("_classified_as_"," ").split(" ");
         let images = [];
+
+        //no need to push emptpy columns
+        if(matrixImages[key]["images"].length === 0){
+            continue;
+        }
+
         for(let image in matrixImages[key]["images"]) {
-            
             images.push({
                 view:
                     <>
                     {/* Image in column */}
-                    <div className="hover-click-pair" onClick={() => 
+                    <div className="hover-click-pair d-flex align-items-center" onClick={() => 
                         fillModalData(
                             matrixImages[key]["heatmaps"][image],
                             matrixImages[key]["images"][image],
                             matrixImages[key]["annotations"][image],
                             gt,
                             label, 
-                            matrixImages[key]["confidence"] 
+                            matrixImages[key]["confidence"][image] 
                             ) }>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}
                             style={{"width": 100 + "px", height: 100 + "px"}}></img>
@@ -245,7 +250,7 @@ export default function Dashboard(props) {
 
         columns.push({
             view:
-                <div className="imageColumn d-flex flex-column" style={{"height": (height * 500 * matrixImages.length).toString() + "px" }}>
+                <div className="imageColumn d-flex flex-column align-items-center" style={{"height": (height * 500 * matrixImages.length).toString() + "px" }}>
                     <h3 className={"imageColumnTitle"}>{key.replace(/_/g, " ")}</h3>
                     {
                         images.map(item => (
