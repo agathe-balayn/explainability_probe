@@ -220,7 +220,6 @@ class QueryClassificationFormulas extends React.Component {
      */
 
     processConfusionMatrixData (r) {
-        console.log(r.data);
         document.getElementById("placeholder").innerText = "";
         let matrix_top = []
         let matrix_bottom = []
@@ -252,9 +251,7 @@ class QueryClassificationFormulas extends React.Component {
             }
             idx_row ++
         }
-        console.log(matrix_top)
-        console.log(matrix_bottom)
-
+        
 
 
         /*

@@ -246,8 +246,8 @@ def query_concept_matrix(request):
     #print(bottom_number)
     editedResult["top_number"] = twoDdf_to_df_of_df(top_number.round(2))
     editedResult["bottom_number"] = twoDdf_to_df_of_df(bottom_number.round(2))
-    print(editedResult["top_number"])
-    print(editedResult["bottom_number"])
+    #print(editedResult["top_number"])
+    #print(editedResult["bottom_number"])
     return Response(editedResult, status.HTTP_200_OK)
 
 
