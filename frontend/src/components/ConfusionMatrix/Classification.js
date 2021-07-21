@@ -127,10 +127,11 @@ export default function Classification(props) {
 
     // Function that sorts the entries in the fetched data.
     function sort(array, on) {
+        
         for (let i = 0; i < array.length; i++) {
             var min_idx = i;
             for (let j = i + 1; j < array.length; j++) {
-                if (array[j][on] < array[min_idx][on]) {
+                if (array[j][on] > array[min_idx][on]) {
                     min_idx = j;
                 }
             }
@@ -153,7 +154,7 @@ export default function Classification(props) {
         concept_data.push({
             concept: key,
             percentage_present: conceptTypicality[key]['percent_present'],
-            percentage_correct: conceptTypicality[key]['percent_correct'] * conceptTypicality[key]['percent_present'],
+            percentage_correct: conceptTypicality[key]['percent_correct'],
             typicality: conceptTypicality[key]['typicality']
         });
     }
@@ -165,7 +166,7 @@ export default function Classification(props) {
             innerArray.push({
                 concept: innerKey,
                 percentage_present: ruleTypicality[key][innerKey]['percent_present'],
-                percentage_correct: ruleTypicality[key][innerKey]['percent_correct'] * ruleTypicality[key][innerKey]['percent_present'],
+                percentage_correct: ruleTypicality[key][innerKey]['percent_correct'],
                 typicality: ruleTypicality[key][innerKey]['typicality']
             });
         }
@@ -190,17 +191,17 @@ export default function Classification(props) {
                     </div>
 
                     <div>
-                        <div className="conceptCorrectBar" style={{width: (size * concept_data[i].percentage_correct).toString() + "px"}}>
+                        <div className="conceptCorrectBar" style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px"}}>
                             {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
                         </div>
 
-                        <div className="conceptIncorrectBar" style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct)).toString() + "px"}}></div>
-                        <div className="restBar" style={{width: (size * (1 - (concept_data[i].percentage_present + concept_data[i].percentage_correct))).toString() + "px"}}></div>
+                        <div className="conceptIncorrectBar" style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present )).toString() + "px"}}></div>
+                        <div className="restBar" style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px"}}></div>
                     </div>
                     <br></br>
                     <div>
                         <div className="percentageOfTotalBar" style={{width: (size * concept_data[i].percentage_present).toString() + "px"}}>
-                            {((concept_data[i].percentage_correct + concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
+                            {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
                         <div className="pointer"></div>
                     </div>
                     <br></br>
@@ -221,10 +222,10 @@ export default function Classification(props) {
                         </div>
 
                         <div>
-                            <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct).toString() + "px"}}></div>
-                            <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct)).toString() + "px"}}></div>
+                            <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present ).toString() + "px"}}></div>
+                            <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present )).toString() + "px"}}></div>
 
-                            <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present + rule_data[i].innerArray[e].percentage_correct))).toString() + "px"}}>
+                            <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present ))).toString() + "px"}}>
                         </div>
                         </div>
                         <br></br>
@@ -306,7 +307,6 @@ export default function Classification(props) {
                                 <Radio value={"concept"}>Alphabetical order</Radio><br/>
                                 <Radio value={"typicality"}>Typicality</Radio><br/>
                                 <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
-                                <Radio value={"percentage_wrong"}>Percentage of wrong classification</Radio><br/>
                             </RadioGroup>
                         </div>
                         <Pie
