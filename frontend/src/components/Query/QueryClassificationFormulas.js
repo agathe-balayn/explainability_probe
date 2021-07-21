@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from "axios";
 import {Input, Radio, Select, Button, Checkbox, InputNumber, Slider} from 'antd';
-import {query_rules_url, query_concept_matrix_url} from "../../API";
+import {query_rules_url, query_concept_matrix_url, query_scores_url} from "../../API";
 
 const { Option } = Select;
 
@@ -109,7 +109,7 @@ class QueryClassificationFormulas extends React.Component {
 
         axios
             .post(
-                query_rules_url,
+                query_scores_url,
                 data,
                 {
                     headers: {
@@ -162,6 +162,7 @@ class QueryClassificationFormulas extends React.Component {
         for (let i = 1; i < this.state.numConcepts + 1; i++) {
             let not = document.getElementById("checkbox" + i).checked
             let select = document.getElementById("select" + i).value
+            /*
             if(not) {
                 if(select === "AND") {
                     orExclude.push(document.getElementById("concept" + i).value)
@@ -177,6 +178,23 @@ class QueryClassificationFormulas extends React.Component {
                 }
                 andPart += document.getElementById("concept" + i).value
             }
+            */
+            if (select === "OR") {
+                
+                orQuery.push(andPart)
+                andPart = ""
+                if (not) {
+                    andPart += "NOT "
+                } 
+                
+            } else {
+                andPart += " AND "
+                if (not){
+                    andPart += "NOT "
+                }
+            }
+            andPart += document.getElementById("concept" + i).value
+
         }
 
         if(andPart.length > 0) {
@@ -196,7 +214,10 @@ class QueryClassificationFormulas extends React.Component {
             data["or_exclude"] = orExclude
         }
         //categorization.push(document.getElementById("lsInput").value)
-        //if(categorization !== [""]) {
+        //console.log("test categorization")
+        //console.log(categorization)
+        //if(categorization !== "") {
+        //    console.log("gkjhgkjh")
         //    data['only_true_class'] = [""] //categorization
         //}
         let selectedClasses = []
@@ -481,10 +502,11 @@ class QueryClassificationFormulas extends React.Component {
          */
         let concept_data = [];
         for (let key in this.state.concept_typicality) {
+            
             concept_data.push({
-                concept: key,
+                concept: this.state.concept_typicality[key]['concept_name'],
                 percentage_present: this.state.concept_typicality[key]['percent_present'],
-                percentage_correct: this.state.concept_typicality[key]['percent_correct'] * this.state.concept_typicality[key]['percent_present'],
+                percentage_correct: this.state.concept_typicality[key]['percent_correct'], 
                 typicality: this.state.concept_typicality[key]['typicality']
             });
         }
@@ -499,9 +521,9 @@ class QueryClassificationFormulas extends React.Component {
             let innerArray = [];
             for (let innerKey in this.state.rule_typicality[key]) {
                 innerArray.push({
-                    concept: innerKey,
+                    concept: this.state.rule_typicality[key][innerKey]['rule_name'],
                     percentage_present: this.state.rule_typicality[key][innerKey]['percent_present'],
-                    percentage_correct: this.state.rule_typicality[key][innerKey]['percent_correct'] * this.state.rule_typicality[key][innerKey]['percent_present'],
+                    percentage_correct: this.state.rule_typicality[key][innerKey]['percent_correct'],
                     typicality: this.state.rule_typicality[key][innerKey]['typicality']
                 });
             }
@@ -529,16 +551,16 @@ class QueryClassificationFormulas extends React.Component {
 
                         <div>
                             <div className="conceptCorrectBar"
-                                 style={{width: (size * concept_data[i].percentage_correct).toString() + "px"}}>
+                                 style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px"}}>
                                 {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
                             </div>
 
                             <div className="conceptIncorrectBar"
-                                 style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct)).toString() + "px"}}>
+                                 style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px"}}>
                             </div>
 
                             <div className="restBar"
-                                 style={{width: (size * (1 - (concept_data[i].percentage_present + concept_data[i].percentage_correct))).toString() + "px"}}>
+                                 style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px"}}>
                             </div>
                         </div>
                         <br>
@@ -546,7 +568,7 @@ class QueryClassificationFormulas extends React.Component {
                         <div>
                             <div className="percentageOfTotalBar"
                                  style={{width: (size * concept_data[i].percentage_present).toString() + "px"}}>
-                                {((concept_data[i].percentage_correct + concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
+                                {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
                             <div className="pointer"></div>
 
                         </div>
@@ -566,7 +588,7 @@ class QueryClassificationFormulas extends React.Component {
                     view:
                         <div className={"ruleRow" + (i%2).toString()}>
                             <h5>
-                                {rule_data[i].concept + " -> " + rule_data[i].innerArray[e].concept}
+                                {rule_data[i].innerArray[e].concept}
                             </h5>
                             <div className="totalBar">
                                 <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
@@ -574,13 +596,13 @@ class QueryClassificationFormulas extends React.Component {
                             </div>
 
                             <div>
-                                <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct).toString() + "px"}}>
+                                <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px"}}>
                                 </div>
 
-                                <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct)).toString() + "px"}}>
+                                <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px"}}>
                                 </div>
 
-                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present + rule_data[i].innerArray[e].percentage_correct))).toString() + "px"}}>
+                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present ))).toString() + "px"}}>
 
                                 </div>
                             </div>
@@ -599,6 +621,7 @@ class QueryClassificationFormulas extends React.Component {
             }
 
         }
+        console.log(rule_data_view)
 
         let typicality_view = []
         /**
@@ -696,10 +719,7 @@ class QueryClassificationFormulas extends React.Component {
                             {conceptList}
                         </div>
                     </div>
-                    <span id={"lsSpan"}>
-                        <label id={"ls"}>Is</label>
-                        <Input id={"lsInput"} style={{width: 200, textAlign: 'center'}} placeholder="Categorization"/>
-                    </span>
+
                     <Button onClick={this.getConfusionMatrix} id={"MatrixBtn"} style={{width: 200}}>Show Confusion Matrix</Button>
                     <Button onClick={this.getTypicalityScore} id={"ScoreBtn"} style={{width: 200}}>Show Typicality Score</Button>
 

@@ -231,7 +231,6 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
         # If there is nothing in the class, there is no relevant info so we remove it
         else:
             del concepts[col]
-    #print("res", res)
     return res
 
 
@@ -439,7 +438,8 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
     # prepare data mining input
     modified_representation, list_antecedents, list_consequents = prepare_data_mining_input(
         structured_representation)
-    print("consequent", list_consequents)
+    #print("len modified rep", (modified_representation))
+    #print("consequent", list_consequents)
     # extract rules (this method takes the longest time)
 
     rules, frequent_itemsets = get_rules(modified_representation, min_support_score,
@@ -481,6 +481,8 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
             # 'or sets' are subsets of them. This is done by getting the indices of the positions, checking if the
             # current set should be included or not, and if it should, marks it with 'True'. Otherwise, it sets it
             # to 'False'.
+
+            print("prepare to filter")
             index_list, custom_ruleset = get_exclusion_data(or_queries, data_mining_rules_filter_length)
             or_exclusion_index_list, custom_or_exclusion_ruleset = get_exclusion_data(or_exclude,
                                                                                       data_mining_rules_filter_length)
@@ -607,6 +609,8 @@ def make_tabular_representation_rule_mining_included(old_structured_representati
         True: 'Correctly classified',
         False: 'Misclassified'
     })
+    new_rep = new_rep.loc[:,~new_rep.columns.duplicated()]
+
 
     return new_rep
 
@@ -617,16 +621,37 @@ def filter_concept_function(x, or_queries, or_not_query):
     if len(or_queries) > 0:
         for elem in or_queries:
             #print(type(elem))
+            #print(elem)
 
             if type(elem) == frozenset:
+                temp_res = 0
                 for frozen_elem in list(elem):
-                    #print(x[frozen_elem])
-                    result += x[frozen_elem]#.iloc[0]
+                    if frozen_elem[:4] == "NOT ":
+                        if x[frozen_elem[4:]]== 0:
+                            temp = 1
+                        elif x[frozen_elem[4:]] == 1:
+                            temp = 0
+                        temp_res += temp
+
+                        #print(x[frozen_elem])
+                    else:
+                        temp_res += x[frozen_elem]#.iloc[0]
+                if temp_res == len(list(elem)):
+                    result += 1
+                
                 #print("frozenset")
             
             else:
                 #print(x[elem])
-                result += x[elem].iloc[0]
+                #print(elem)
+                if elem[:4] == "NOT ":
+                    if x[elem[4:]].iloc[0]== 0:
+                        temp = 1
+                    elif x[elem[4:]].iloc[0] == 1:
+                        temp = 0
+                    result += temp
+                else:
+                    result += x[elem].iloc[0]
     #print("filtering2")
     if len(or_not_query) > 0:
         for elem in or_not_query:
@@ -724,6 +749,184 @@ def execute_image_query_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         structured_representation["filter_concepts"] = 1
     #print("filter", structured_representation["filter_concepts"] )
     return structured_representation, status.HTTP_200_OK
+
+def or_filter(x, or_queries):
+    bool_ = False
+    #print(type(x))
+    for query in or_queries:
+        #print(query, x)
+        if len(query.intersection(x)) == len(query):
+            bool_ = True
+    return bool_
+
+
+def filter_rules(or_queries, or_not_query, or_exclude, exclude_concepts, filter_concepts, data_mining_rules_filter_length):
+    #print("prepare to filter", or_queries, or_not_query, or_exclude, exclude_concepts, filter_concepts)
+    #print("list t fikter", data_mining_rules_filter_length)
+    
+    data_mining_rules_filter_length = data_mining_rules_filter_length.loc[data_mining_rules_filter_length["antecedents"].apply(lambda x: or_filter(x, or_queries))]
+    #print(len(data_mining_rules_filter_length))
+    return data_mining_rules_filter_length
+
+
+
+def execute_basic_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
+                                 max_antecedent_length=10, min_support_score=0.1,
+                                 min_lift_score=0.1, min_confidence_score=0.1,
+                                 filter_concepts="ALL", or_queries=[],
+                                 desired_classes=["ALL"], class_selection=["ALL"],
+                                 predicted_class=["ALL"], not_predicted_class=["ALL"],
+                                 or_exclude=[], or_not_query=[], exclude_concepts=[],
+                                 exclude_predicted_classes=[], exclude_true_classes=[],
+                                 only_true_class=["ALL"], only_predicted_class=["ALL"],
+                                 session_id=-1):
+    print("basic rule mining")
+    if image_set_setting not in VALID_IMAGE_SET_SETTINGS or return_setting not in VALID_RETURN_SETTINGS:
+        return {
+                   "Non-valid input for settings"
+               }, [], status.HTTP_400_BAD_REQUEST
+
+    if session_id < 0:
+        return {
+                   "Non-valid input for session id"
+               }, [], status.HTTP_400_BAD_REQUEST
+    # 1. Get subset of images
+    image_list, stat = retrieve_images(
+        image_set_setting, binary_task_classes, session_id)
+    #print(image_list)
+    #print(image_list)
+    if stat != status.HTTP_200_OK:
+        return image_list, stat
+
+    # 2. Make tabular representation with only these images
+    structured_representation, semantic_features = make_tabular_representation(
+        image_list, image_set_setting)
+    # a copy is made here, because structured_representation gets changed in rule mining
+    rep_old = structured_representation.copy(deep=True)
+
+    #### Get rules.
+    modified_representation, list_antecedents, list_consequents = prepare_data_mining_input(
+        structured_representation)
+    #print("consequent", list_consequents)
+    # extract rules (this method takes the longest time)
+    #print("len modified rep", (modified_representation))
+
+    rules, frequent_itemsets = get_rules(modified_representation, min_support_score,
+                                         min_lift_score, min_confidence_score, list_antecedents=list_antecedents, list_consequents=list_consequents, need_subset=False)
+    #print("output", rules)
+    rules.replace([np.inf, -np.inf], 999999, inplace=True)
+    data_mining_rules = rules
+    print("we found rullllles", len(data_mining_rules))
+    #print(data_mining_rules)
+    if len(data_mining_rules) > 0:
+        data_mining_rules_filter_length = data_mining_rules[data_mining_rules['antecedent_len']
+                                                            <= max_antecedent_length]
+        print(data_mining_rules_filter_length)
+        data_mining_rules_filtered =  filter_rules(or_queries, or_not_query, or_exclude, exclude_concepts, filter_concepts, data_mining_rules_filter_length)
+    
+    if len(data_mining_rules_filtered) > 0:
+        print("nb rules fitered", len(data_mining_rules_filtered))
+
+        antecedents = []
+        supp_conf = []
+        for row in data_mining_rules_filtered.iterrows():
+            concepts = list(row[1].get("antecedents"))
+            antecedent = concepts[0]
+            if len(concepts) > 1:
+                for i in range(1, len(concepts)):
+                    antecedent = concepts[i] + " AND " + antecedent
+            antecedents.append(antecedent)
+            supp_conf.append((antecedent, row[1].get(
+                "support"), row[1].get("confidence")))
+        #print((data_mining_rules_filtered))
+        #return data_mining_rules_filtered, antecedents, supp_conf
+        data_mining_rules = data_mining_rules_filtered
+        antecendets_from_rule_mining = list(set(antecedents))
+        structured_representation_rule_mining = make_tabular_representation_rule_mining_included(
+            rep_old, semantic_features, antecendets_from_rule_mining)
+
+
+
+        # 5. Run compute_statistical_tests with rule mining tabular representation
+        semantic_feature_stats_dict = compute_statistical_tests_custom(
+            structured_representation_rule_mining[["image_name", "true_label", "predicted_label"] + antecendets_from_rule_mining + ["classification_check"]])
+        #print(semantic_feature_stats_dict)
+        #print("got results here", len(data_mining_rules), len(semantic_feature_stats_dict), len(structured_representation_rule_mining[["image_name", "true_label", "predicted_label"] + antecendets_from_rule_mining + ["classification_check"]]))
+        return data_mining_rules, semantic_feature_stats_dict, structured_representation_rule_mining[["image_name", "true_label", "predicted_label"] + antecendets_from_rule_mining + ["classification_check"]] #"a", "b", "c"
+    else:
+        print("no rule")
+        return [], [], []
+
+
+
+def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
+                                 max_antecedent_length=10, min_support_score=0.1,
+                                 min_lift_score=0.1, min_confidence_score=0.1,
+                                 filter_concepts="ALL", or_queries=[],
+                                 desired_classes=["ALL"], class_selection=["ALL"],
+                                 predicted_class=["ALL"], not_predicted_class=["ALL"],
+                                 or_exclude=[], or_not_query=[], exclude_concepts=[],
+                                 exclude_predicted_classes=[], exclude_true_classes=[],
+                                 only_true_class=["ALL"], only_predicted_class=["ALL"],
+                                 session_id=-1):
+    print("execute_basic_concept_score_pipeline")
+    if image_set_setting not in VALID_IMAGE_SET_SETTINGS or return_setting not in VALID_RETURN_SETTINGS:
+        return {
+                   "Non-valid input for settings"
+               }, [], status.HTTP_400_BAD_REQUEST
+
+    if session_id < 0:
+        return {
+                   "Non-valid input for session id"
+               }, [], status.HTTP_400_BAD_REQUEST
+    # 1. Get subset of images
+    image_list, stat = retrieve_images(
+        image_set_setting, binary_task_classes, session_id)
+    #print(image_list)
+    #print(image_list)
+    if stat != status.HTTP_200_OK:
+        return image_list, stat
+
+    # 2. Make tabular representation with only these images
+    structured_representation, semantic_features = make_tabular_representation(
+        image_list, image_set_setting)
+    # a copy is made here, because structured_representation gets changed in rule mining
+    rep_old = structured_representation.copy(deep=True)
+    #print(structured_representation)
+
+    #### Get rules.
+    #modified_representation, list_antecedents, list_consequents = prepare_data_mining_input(
+    #    structured_representation)
+    #print(modified_representation)
+    print("prepare to filter", or_queries, or_not_query, or_exclude, exclude_concepts, filter_concepts)
+    if (len(or_not_query) > 0) or (len(or_queries) > 0):
+        structured_representation["filter_concepts"] = structured_representation.apply(lambda x: filter_concept_function(x, or_queries, or_not_query), axis=1)
+    else:
+        structured_representation["filter_concepts"] = 1
+    print(structured_representation)
+
+    # Get the scores: support antecedent, support consequent,  and lift.
+    #positive_rules = structured_representation[structured_representation["filter_concepts"] == 1]
+    #print(len(positive_rules))
+    list_scores = []
+    list_classes = list(set(structured_representation["true_label"]))
+    for class_name in list_classes:
+        common_supp = len(structured_representation.loc[(structured_representation["predicted_label"] == class_name) & (structured_representation["filter_concepts"] == 1)])
+        cons_sup = len(structured_representation[structured_representation["predicted_label"] == class_name])
+        ant_sup = len(structured_representation[structured_representation["filter_concepts"] == 1])
+        list_scores.append({"consequent_name": class_name,\
+         "consequent_supp": cons_sup,\
+         "antecedent_supp": ant_sup,\
+         "ant_cons_supp": common_supp,\
+         "lift": (common_supp)/(cons_sup * ant_sup)})
+    print(list_scores)
+    semantic_feature_stats_dict = compute_statistical_tests_custom(
+        structured_representation[["image_name", "true_label", "predicted_label", "filter_concepts", "classification_check"]])
+    print(semantic_feature_stats_dict)
+    return list_scores, structured_representation[["image_name", "true_label", "predicted_label", "filter_concepts", "classification_check"]], semantic_feature_stats_dict
+
+
+
 
 def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
                                  max_antecedent_length=10, min_support_score=0.1,
@@ -848,7 +1051,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         image_list, image_set_setting)
     # a copy is made here, because structured_representation gets changed in rule mining
     rep_old = structured_representation.copy(deep=True)
-    #print(structured_representation)
+    print(structured_representation)
     #print(semantic_features)
 
     # 3. Perform rule mining
@@ -888,7 +1091,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
 
     # If we want to remove a 'base' concept, we need to make sure that it is not in this list, so we check
     # if it is in the list. If so, we remove it
-    print("filter")
+    #print("filter")
     for element_to_remove in exclude_concepts:
         if element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(element_to_remove)
@@ -896,7 +1099,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     for for_element_to_remove in or_exclude:
         if for_element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(for_element_to_remove)
-    print(structured_representation_rule_mining)
+    #print(structured_representation_rule_mining)
 
     concept_and_rule_classifications = get_concept_and_rule_classifications(structured_representation_rule_mining,
                                                                             semantic_feature_stats_dict,
@@ -913,3 +1116,100 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
 
     # 7. Return everything
     return concept_and_rule_classifications, supp_conf, status.HTTP_200_OK
+
+def string_concept_name(concept_name):
+  
+    if len(concept_name) == 1:
+        return concept_name[0]
+    else:
+        name_ = ""
+        for elem in concept_name:
+            name_ += "("
+            name_ += elem
+            name_ += ") OR "
+
+        return name_[:-4]
+
+def post_process_concepts_rules(list_scores, struct_rep, stat_scores, list_rules, stat_rules, df_info, concept_name):
+
+    
+    # Get concept name
+    concept_name_string = string_concept_name(concept_name)
+    print(concept_name_string)
+    #print("name", concept_name_string)
+    #print(list_scores)
+    #print(struct_rep)
+    #print(stat_scores)
+
+    concept_data = []
+    rule_data = {}
+
+    # Input info queried concept.
+    info_concept = {}
+    info_concept["concept_name"] = concept_name_string
+    info_concept["typicality"] = round(stat_scores["filter_concepts"]["cramers_value"], 3)
+    info_concept["percent_present"] = round(len(struct_rep.loc[struct_rep["filter_concepts"] == 1]) / len(struct_rep), 3)
+    info_concept["percent_correct"] = round(len(struct_rep.loc[(struct_rep["filter_concepts"] == 1) & (struct_rep["classification_check"] == "Correctly classified")]) / len(struct_rep.loc[struct_rep["filter_concepts"] == 1]), 3)
+
+    concept_data.append(info_concept)
+
+    # Input info queried rule.
+    for class_ in list_scores:
+        info_rule = {}
+        info_rule["rule_name"] = concept_name_string + " -> " + class_["consequent_name"]
+        info_rule["typicality"] = round(class_["lift"], 3)
+        info_rule["percent_present"] = round(len(struct_rep.loc[(struct_rep["filter_concepts"] == 1) & (struct_rep["predicted_label"] == class_["consequent_name"])]) / len(struct_rep), 3)
+        
+        if len(struct_rep.loc[(struct_rep["filter_concepts"] == 1) & (struct_rep["predicted_label"] == class_["consequent_name"])]) == 0:
+            info_rule["percent_correct"] = 0.0
+        else:
+            info_rule["percent_correct"] = round(len(struct_rep.loc[(struct_rep["filter_concepts"] == 1) & (struct_rep["predicted_label"] == class_["consequent_name"]) & (struct_rep["classification_check"] == "Correctly classified")])/ len(struct_rep.loc[(struct_rep["filter_concepts"] == 1) & (struct_rep["predicted_label"] == class_["consequent_name"])]), 3)
+        if concept_name_string not in list(rule_data.keys()):
+            rule_data[concept_name_string] = [info_rule]
+        else:
+            rule_data[concept_name_string].append(info_rule)
+
+    # If we also found other similar rules, add them here.
+    #print(list_rules, stat_rules, df_info)
+    if len(list_rules) > 0:
+        for class_name in stat_rules.keys():
+            class_set = set(class_name.split(" AND "))
+            list_rules["antecedents"] =list_rules["antecedents"].apply(lambda x: set(x))
+
+            list_concept_names = [l["concept_name"] for l in concept_data]
+            if class_name not in list_concept_names:
+                info_concept = {}
+                info_concept["concept_name"] = class_name
+                info_concept["typicality"] = round(stat_rules[class_name]["cramers_value"], 3)
+                info_concept["percent_present"] = round(len(df_info.loc[df_info[class_name] == 1]) / len(df_info), 3)
+                info_concept["percent_correct"] = round(len(df_info.loc[(df_info[class_name] == 1) & (df_info["classification_check"] == "Correctly classified")]) / len(df_info.loc[df_info[class_name] == 1]), 3)
+
+                concept_data.append(info_concept)
+
+            info_rule = {}
+            info_rule["rule_name"] = class_name + " -> " 
+            #GET RULE
+            rule = list_rules.loc[list_rules["antecedents"].apply(lambda x: True if len(x.intersection(class_set)) == len(class_set) else False)].iloc[0]
+            consequent_name = str(list(rule['consequents'])[0])
+            info_rule["rule_name"] += consequent_name
+            info_rule["typicality"] = round(rule["lift"], 3)
+            info_rule["percent_present"] = round(len(df_info.loc[(df_info[class_name] == 1) & (df_info["predicted_label"] == consequent_name)]) / len(df_info), 3)
+            info_rule["percent_correct"] = round(len(df_info.loc[(df_info[class_name] == 1) & (df_info["predicted_label"] == consequent_name) & (df_info["classification_check"] == "Correctly classified")])/ len(df_info.loc[(df_info[class_name] == 1) & (df_info["predicted_label"] == consequent_name)]), 3)
+            
+            #print(list(rule_data.keys()))
+            #print(class_name)
+            if class_name not in list(rule_data.keys()):
+                rule_data[class_name] = [info_rule]
+            else:
+                list_rule_names = [l["rule_name"] for l in rule_data[class_name]]
+                #print(list_rule_names)
+                #print(info_rule["rule_name"])
+                if info_rule["rule_name"] not in list_rule_names:
+                    rule_data[class_name].append(info_rule)
+        # Remove ducplictes.
+        for key in rule_data.keys():
+            rule_data[key] = [dict(t) for t in {tuple(d.items()) for d in rule_data[key]}]
+            #rule_data[key] = list(set(rule_data[key]))
+
+    #print(concept_data, rule_data)
+    return  concept_data, rule_data

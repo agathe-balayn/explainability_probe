@@ -7,8 +7,8 @@ from .models import Sessions, Images, Annotations
 from .serializer import UniversalSerializer, SerializerClassNotFoundException
 from .seca_helper_methods import get_tabular_representation, get_tabular_representation_rule_mining, \
     save_csv_predictions, link_annotations, compute_statistical_tests_custom
-from .pipeline import execute_rule_mining_pipeline
-from .query import query_rules, query_classes, universal_query, query_images
+from .pipeline import execute_rule_mining_pipeline, post_process_concepts_rules
+from .query import query_rules, query_classes, universal_query, query_images, simple_rule_search, query_score_concepts
 from .models import Sessions, Images, Notes
 from django.core.exceptions import FieldError
 from django.views.generic import View
@@ -401,9 +401,50 @@ def query_concepts_and_rules(request):
                     method in the query file.
     :return: A Response object containing a python dictionary object and an appropriate status code
     """
+    print("query concepts and rules", request.data)
     res, code = query_rules(request.data)
     return Response(res, status=code)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([
+    TokenAuthentication,
+])
+def query_scores(request):
+    print("querying scores.")
+    # Search for rules which have the queried concepts.
+    print(request.data)
+
+    if ("or_query" not in request.data) or (len(request.data["or_query"]) == 0):
+        print("nothing to query")
+        return Response([], status=status.HTTP_417_EXPECTATION_FAILED)
+        
+
+
+    list_scores, struct_rep, stat_scores = query_score_concepts(request.data)
+
+
+    has_not = False
+    if ("or_query" in request.data) and (len(request.data["or_query"]) > 0):
+        for item in request.data["or_query"]:
+            if "NOT" in item:
+                has_not = True
+    if ("or_query" in request.data) and (len(request.data["or_query"]) > 0) and (has_not):
+        #print("need to add additional conditions with negation")
+        list_rules = []
+        stat_rules = []
+        df_info = []
+    else:
+        list_rules, stat_rules, df_info = simple_rule_search(request.data)
+    
+    
+    res_concept, res_rule = post_process_concepts_rules(list_scores, struct_rep, stat_scores, list_rules, stat_rules, df_info, request.data["or_query"])
+
+    res = {"concepts": res_concept, "rules": res_rule}
+    code = status.HTTP_200_OK
+    print(res)
+    return Response(res, status=code)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
