@@ -576,7 +576,7 @@ def compute_statistical_tests_custom(semantic_feature_representation, print_valu
         Returns:
             a dictionary where key is the semantic feature, and value is another dictionary of cramer value, p_value and class_name_frequencies
     """
-    print("compute stat tests")
+
     semantic_feature_stats_dict = {}
     for semantic_feature in semantic_feature_representation.columns[3:-1]:
         contingency_table = pd.pivot_table(
@@ -588,7 +588,6 @@ def compute_statistical_tests_custom(semantic_feature_representation, print_valu
         stat, p_value, dof, expected_freq = chi2_contingency(
             contingency_table)
         cramers_v_value = compute_cramers_v_no_div_by_0(stat, contingency_table)
-
         class_frequencies = np.round(
             contingency_table[semantic_feature][1] / np.sum(
                 contingency_table[semantic_feature], axis=1),

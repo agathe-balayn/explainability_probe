@@ -490,7 +490,7 @@ def prepare_data_mining_input(semantic_feature_representation):
 def get_rules(semantic_feature_representation,
               min_support_score=0.75,
               min_lift_score=1.2,
-              min_confidence_score=0.75, list_antecedents=[], list_consequents=[]):
+              min_confidence_score=0.75, list_antecedents=[], list_consequents=[], need_subset=True):
     """
         Extract the rules and frequent item sets from the structured representation
         Args:
@@ -504,6 +504,7 @@ def get_rules(semantic_feature_representation,
     """
     # Get frequent item set
     #print(semantic_feature_representation)
+    print("param", min_support_score, min_lift_score, min_confidence_score)
     te = TransactionEncoder()
     te_ary = te.fit(semantic_feature_representation).transform(
         semantic_feature_representation)
@@ -659,51 +660,54 @@ def get_rules(semantic_feature_representation,
     rules = rules[(rules['antecedent_len'] >= 0)
                   & (rules['confidence'] > min_confidence_score) &
                   (rules['lift'] > min_lift_score)]
-    rules_temp = rules.copy()
-    while len(rules_temp) > 500:
-        print(len(rules_temp))
-        min_confidence_score += 0.1
-        min_lift_score += 0.1
-        rules_temp = rules_temp[(rules_temp['antecedent_len'] >= 0)
-                  & (rules_temp['confidence'] > min_confidence_score) &
-                  (rules_temp['lift'] > min_lift_score)]
-    print(len(rules_temp))
-    if len(rules_temp) < 100:
-        print(len(rules))
-        rules_temp = rules[(rules['antecedent_len'] >= 0)
-                  & (rules['confidence'] > min_confidence_score - 0.1) &
-                  (rules['lift'] > min_lift_score - 0.1)]
-        print("corrdcted", len(rules_temp))
-        rules_temp_temp = rules_temp.copy()
-        min_confidence_score = min_confidence_score - 0.1
-        min_lift_score = min_lift_score - 0.1
+
+
+    if need_subset:
+        rules_temp = rules.copy()
         while len(rules_temp) > 500:
-            print("hhh", len(rules_temp))
-            min_confidence_score += 0.005
-            min_lift_score += 0.005
+            print(len(rules_temp))
+            min_confidence_score += 0.1
+            min_lift_score += 0.1
             rules_temp = rules_temp[(rules_temp['antecedent_len'] >= 0)
                       & (rules_temp['confidence'] > min_confidence_score) &
                       (rules_temp['lift'] > min_lift_score)]
-        if len(rules_temp) < 20:
-            rules = rules_temp_temp[(rules_temp_temp['antecedent_len'] >= 0)
-                  & (rules_temp_temp['confidence'] > min_confidence_score - 0.005) &
-                  (rules_temp_temp['lift'] > min_lift_score - 0.005)]
+        print(len(rules_temp))
+        if len(rules_temp) < 100:
+            print(len(rules))
+            rules_temp = rules[(rules['antecedent_len'] >= 0)
+                      & (rules['confidence'] > min_confidence_score - 0.1) &
+                      (rules['lift'] > min_lift_score - 0.1)]
+            print("corrdcted", len(rules_temp))
+            rules_temp_temp = rules_temp.copy()
+            min_confidence_score = min_confidence_score - 0.1
+            min_lift_score = min_lift_score - 0.1
+            while len(rules_temp) > 500:
+                print("hhh", len(rules_temp))
+                min_confidence_score += 0.005
+                min_lift_score += 0.005
+                rules_temp = rules_temp[(rules_temp['antecedent_len'] >= 0)
+                          & (rules_temp['confidence'] > min_confidence_score) &
+                          (rules_temp['lift'] > min_lift_score)]
+            if len(rules_temp) < 20:
+                rules = rules_temp_temp[(rules_temp_temp['antecedent_len'] >= 0)
+                      & (rules_temp_temp['confidence'] > min_confidence_score - 0.005) &
+                      (rules_temp_temp['lift'] > min_lift_score - 0.005)]
+            else:
+                rules = rules_temp
+            del rules_temp, rules_temp_temp
+
+            if len(list(list_consequents)) <= 2:
+                if len(rules) > 100:
+                    rules = rules.nlargest(100,'support')
+            else:
+                if len(rules) > 500:
+                    rules = rules.nlargest(500,'support')
+            print("final", len(rules))
+
         else:
             rules = rules_temp
-        del rules_temp, rules_temp_temp
-
-        if len(list(list_consequents)) <= 2:
-            if len(rules) > 100:
-                rules = rules.nlargest(100,'support')
-        else:
-            if len(rules) > 500:
-                rules = rules.nlargest(500,'support')
-        print("final", len(rules))
-
-    else:
-        rules = rules_temp
-        #rules = rules_temp
-        del rules_temp
+            #rules = rules_temp
+            del rules_temp
 
     #if len(rules) < 20:
     #    rules = rules[(rules['antecedent_len'] >= 0)
