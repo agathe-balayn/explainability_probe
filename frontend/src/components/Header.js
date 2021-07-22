@@ -32,23 +32,21 @@ export default function Header(props) {
                     <AboutInterface />
                 </div>
             </TabPane>
+            
+
             <TabPane disabled={selected !="false"} tab="Dashboard" key="1" className="dashboard_tab" id={"dashboard_tab"}>
                 <div className="tabBody">
                     <Dashboard />
                 </div>
             </TabPane>
 
-            <TabPane disabled={selected !="false"} tab="SECA" key="2" className="home_tab">
-                <div className="tabBody">
-                    <AboutSECA />
-                </div>
-            </TabPane>
-            <TabPane disabled={selected !="false"} tab="Confusion Matrix" key="3" className="home_tab">
+            
+            <TabPane disabled={selected !="false"} tab="Overview through Confusion Matrix" key="3" className="home_tab">
                 <div className="tabBody">
                     <ConfusionMatrix/>
                 </div>
             </TabPane>
-            <TabPane disabled={selected !="false"} tab="Explore" key="4" class="home_tab">
+            <TabPane disabled={selected !="false"} tab="Overview through main Concepts" key="4" class="home_tab">
                 <div className="tabBody"><Explore /></div>
             </TabPane>
             <TabPane disabled={selected !="false"} tab="Query" key="5" class="home_tab">
@@ -61,9 +59,14 @@ export default function Header(props) {
                     <Wiki />
                 </div>
             </TabPane>
-            <TabPane disabled={selected !="false"} tab="Info" key="7" class="home_tab">
+            <TabPane disabled={selected !="false"} tab="Info around functionalities" key="7" class="home_tab">
                 <div className="tabBody">
                     <Tutorial />
+                </div>
+            </TabPane>
+            <TabPane disabled={selected !="false"} tab="Info around backend algorithms" key="2" className="home_tab">
+                <div className="tabBody">
+                    <AboutSECA />
                 </div>
             </TabPane>
             <TabPane tab="User Profile" key="8" class="home_tab">
@@ -71,7 +74,7 @@ export default function Header(props) {
                     <UserProfile />
                 </div>
             </TabPane>
-            <TabPane tab="Submit data" key="9">
+            <TabPane tab="Create new session" key="9">
                 <div className="tabBody">
                     <SubmitData />
                 </div>
