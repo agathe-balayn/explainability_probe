@@ -438,16 +438,7 @@ export default function Dashboard(props) {
                                     }}
                                 />
                                 <br></br>
-                                <div className="subtitle"><h3>Ordering</h3></div>
-                                <RadioGroup value={sorting} onChange={(event) => {
-                                    setSorting(event.target.value);
-                                    sort(concept_data, sorting);
-                                }}>
-                                    <Radio value={"concept"}>Alphabetical order</Radio><br/>
-                                    <Radio value={"typicality"}>Typicality</Radio><br/>
-                                    <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
-                                    <Radio value={"percentage_wrong"}>Percentage of wrong classification</Radio><br/>
-                                </RadioGroup>
+                                
                             </div>
                             {
                                 columns.map(item => (
