@@ -12,9 +12,10 @@ export default function Classification(props) {
     const data  = props.location.state; // sent from the Confusion Matrix
     const comprehensiveLabel = data[0];
     const binaryLabel = data[1];
+    console.log(data)
     const comprehensiveView = data[2];
-    const binaryView = data[3];
-    const binaryMatrixClasses = data[4];
+    const binaryView = data[2];
+    const binaryMatrixClasses = data[1];
     const session_id = useState(JSON.parse(sessionStorage.getItem("session")))
     let colors = []; // for the charts
 
@@ -27,27 +28,37 @@ export default function Classification(props) {
     );
 
     // Randomly decide the category's color for the charts
+    let total_images = 0
     for (let i = 0; i < comprehensiveView.length; i++) {
         const rand = 'rgb(' + Math.floor(Math.random() * 256) + ', ' + Math.floor(Math.random() * 256) + ', '
             + Math.floor(Math.random() * 256) +  ')';
         colors[i] = rand;
+        total_images += comprehensiveView[i]
     }
+    console.log(total_images)
+    let fraction_images = []
+    for (let i = 0; i < comprehensiveView.length; i++) {
+        fraction_images.push((comprehensiveView[i] / total_images).toFixed(2))
+    }
+    console.log(fraction_images)
+
 
     // Inputs for charts
+
     const comprehensiveData = {
         labels: comprehensiveLabel,
         datasets: [{
             label: 'Comprehensive overview',
-            data: comprehensiveView,
+            data: fraction_images,
             backgroundColor: colors,
             hoverOffset: 4,
         }]
     };
     const binaryData = {
-        labels: binaryLabel,
+        labels: [binaryLabel[0] + " predicted as " + binaryLabel[1], binaryLabel[1] + " predicted as " + binaryLabel[0], "correctly predicted " +  binaryLabel[0], "correctly predicted " +  binaryLabel[1]],
         datasets: [{
             label: 'Strict binary classification',
-            data: binaryView,
+            data: fraction_images,
             backgroundColor: [
                 'rgb(255, 99, 132)',
                 'rgb(54, 162, 235)',
@@ -317,16 +328,7 @@ export default function Classification(props) {
                                 <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
                             </RadioGroup>
                         </div>
-                        <Pie
-                            data={{
-                                labels: comprehensiveData.labels,
-                                datasets: comprehensiveData.datasets
-                            }}
-                            options = {{
-                                radius: "100%",
-                                maintainAspectRatio: true,
-                            }}
-                        />
+                        
                         <Pie
                             data={{
                                 labels: binaryData.labels,
@@ -337,6 +339,7 @@ export default function Classification(props) {
                                 maintainAspectRatio: true,
                             }}
                         />
+                        <p>Total images: {total_images}</p>
                     </div>
 
                     <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>

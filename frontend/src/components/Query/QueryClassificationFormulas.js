@@ -714,7 +714,7 @@ class QueryClassificationFormulas extends React.Component {
                     </div>
 
                     <Button onClick={this.getConfusionMatrix} id={"MatrixBtn"} style={{width: 200}}>Show Concept Matrix</Button>
-                    <Button onClick={this.getTypicalityScore} id={"ScoreBtn"} style={{width: 200}}>Show Typicality Score</Button>
+                    <Button onClick={this.getTypicalityScore} id={"ScoreBtn"} style={{width: 200}}>Show Concept Typicality</Button>
 
                 </div>
                 <div id={"Settings"}>
