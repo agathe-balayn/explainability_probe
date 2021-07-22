@@ -74,6 +74,7 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
     res['concepts'] = concepts
     res['rules'] = rules
 
+
     # If filter concepts are not ALL, make the frozensets into the same format as our displayed strings
     # eg: from frozenset("table", "chair") to table AND chair
     if filter_concepts != "ALL":
@@ -123,6 +124,7 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
                     and only_true_class == ["ALL"] and only_predicted_class == ["ALL"]:
                 for sfr_length in range(
                         len(semantic_feature_representation[semantic_feature_representation.columns[0]])):
+
                     if semantic_feature_representation.loc[sfr_length, name] == 1 and \
                             semantic_feature_representation.loc[sfr_length, "predicted_label"] == consequent:
                         current_rule_info[semantic_feature_representation.loc[sfr_length, "image_name"]] = \
@@ -147,7 +149,7 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
                         current_rule_info[semantic_feature_representation.loc[sfr_length, "image_name"]] = \
                             semantic_feature_representation.loc[sfr_length,
                                                                 "true_label"]
-
+            
             num_correct = 0
             for e in current_rule_info:
                 if current_rule_info[e] == consequent:
@@ -213,7 +215,8 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
                                                only_true_classes=only_true_class):
                     present[semantic_feature_representation.loc[i, semantic_feature_representation.columns[0]]] = \
                         semantic_feature_representation.loc[i,
-                                                            'classification_check']
+                                                          'classification_check']
+
 
         num_correct = 0
         for e in present:
@@ -768,7 +771,11 @@ def filter_rules(or_queries, or_not_query, or_exclude, exclude_concepts, filter_
     #print(len(data_mining_rules_filter_length))
     return data_mining_rules_filter_length
 
-
+def create4task(x):
+    if x["predicted_label"] == x["true_label"]:
+        return "correctly predicted " + x["true_label"]
+    else:
+        return x["true_label"] + " predicted as " + x["predicted_label"]
 
 def execute_basic_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
                                  max_antecedent_length=10, min_support_score=0.1,
@@ -801,6 +808,10 @@ def execute_basic_rule_mining_pipeline(image_set_setting, return_setting="CONCEP
     # 2. Make tabular representation with only these images
     structured_representation, semantic_features = make_tabular_representation(
         image_list, image_set_setting)
+
+
+
+
 
     if class_selection != ["ALL"]:
         print("filter classes")
@@ -930,7 +941,7 @@ def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONC
         structured_representation["filter_concepts"] = structured_representation.apply(lambda x: filter_concept_function(x, or_queries, or_not_query), axis=1)
     else:
         structured_representation["filter_concepts"] = 1
-    print(structured_representation)
+    #print(structured_representation)
 
     if class_selection != ["ALL"]:
         print("filter classes")
@@ -969,7 +980,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
                                  or_exclude=[], or_not_query=[], exclude_concepts=[],
                                  exclude_predicted_classes=[], exclude_true_classes=[],
                                  only_true_class=["ALL"], only_predicted_class=["ALL"],
-                                 session_id=-1):
+                                 session_id=-1, task_type="binary"):
     """
     A master method to execute the entire rule mining pipeline in one go. It takes in the following input parameters and
     runs rule mining on all the images which are in the database, using that session id, and only on the images which
@@ -1078,12 +1089,16 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     if stat != status.HTTP_200_OK:
         return image_list, stat
 
+
     # 2. Make tabular representation with only these images
     structured_representation, semantic_features = make_tabular_representation(
         image_list, image_set_setting)
+
+    if task_type == "4task":
+        structured_representation["predicted_label"] = structured_representation.apply(lambda x: create4task(x), axis=1)
+
     # a copy is made here, because structured_representation gets changed in rule mining
     rep_old = structured_representation.copy(deep=True)
-    print(structured_representation)
     #print(semantic_features)
 
     # 3. Perform rule mining
@@ -1132,6 +1147,8 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         if for_element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(for_element_to_remove)
     #print(structured_representation_rule_mining)
+    if task_type == "4task":
+        structured_representation["true_label"] = "correctly predicted " + structured_representation["true_label"]
 
     concept_and_rule_classifications = get_concept_and_rule_classifications(structured_representation_rule_mining,
                                                                             semantic_feature_stats_dict,
@@ -1243,5 +1260,5 @@ def post_process_concepts_rules(list_scores, struct_rep, stat_scores, list_rules
             rule_data[key] = [dict(t) for t in {tuple(d.items()) for d in rule_data[key]}]
             #rule_data[key] = list(set(rule_data[key]))
 
-    #print(concept_data, rule_data)
+
     return  concept_data, rule_data

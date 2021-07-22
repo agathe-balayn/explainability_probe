@@ -163,15 +163,8 @@ export default function ConfusionMatrix(props) {
                                             state:
                                                 [
                                                     categories,
-                                                    [categories[key2], categories[key2 + 1],
-                                                        categories[key1],
-                                                        key1 < absoluteData.length -1 ? categories[key1 + 1]: categories[key1 - 1]],
-                                                    absoluteData[key1],
-                                                    [
-                                                        absoluteData[key1][key2], absoluteData[key1][key2 + 1],
-                                                        key1 < absoluteData.length - 1 ? absoluteData[key1 + 1][key2] :  absoluteData[key1 - 1][key2],
-                                                        key1 < absoluteData.length - 1 ? absoluteData[key1 + 1][key2 + 1] : absoluteData[key1 - 1][key2 + 1]                                              ],
-                                                    [categories[key1], categories[key2]]
+                                                    [categories[key1], categories[key2]],
+                                                    [absoluteData[key1][key2], absoluteData[key2][key1], absoluteData[key1][key1], absoluteData[key2][key2]]
                                                 ]
                                         }} key={key1 + key2}>{item}%</Link>
                                     </div>
@@ -180,16 +173,9 @@ export default function ConfusionMatrix(props) {
                                             pathname: "/classification/" + categories[key1] + "/" + categories[key2],
                                             state:
                                                 [
-                                                    categories,
-                                                    [categories[key2], categories[key2 + 1],
-                                                        categories[key1],
-                                                        key1 < absoluteData.length -1 ? categories[key1 + 1]: categories[key1 - 1]],
-                                                    absoluteData[key1],
-                                                    [
-                                                        absoluteData[key1][key2], absoluteData[key1][key2 + 1],
-                                                        key1 < absoluteData.length - 1 ? absoluteData[key1 + 1][key2] :  absoluteData[key1 - 1][key2],
-                                                        key1 < absoluteData.length - 1 ? absoluteData[key1 + 1][key2 + 1] : absoluteData[key1 - 1][key2 + 1]                                                      ],
-                                                    [categories[key1], categories[key2]]
+                                                     categories,
+                                                    [categories[key1], categories[key2]],
+                                                    [absoluteData[key1][key2], absoluteData[key2][key1], absoluteData[key1][key1], absoluteData[key2][key2]]
                                                 ]
                                         }} key={key1 + key2}>{absoluteData[key1][key2] + " / " + totalImages}</Link>
                                     </div>

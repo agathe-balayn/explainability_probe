@@ -20,6 +20,7 @@ export default function Classification(props) {
     let colors = []; // for the charts
 
     let [sorting, setSorting] = useState("concept");
+    let [settingClasses, setSettingClasses] = useState("binary");
     let [ruleTypicality, setRuleTypicality] = useState([]);
     let [conceptTypicality, setConceptTypicality] = useState([]);
     const [matrixImages, setMatrixImages] = useState([])
@@ -78,7 +79,8 @@ export default function Classification(props) {
                       "query_type": "rules",
                       "image_setting": "binary_matrix",
                       "add_class": [binaryMatrixClasses[0], binaryMatrixClasses[1]],
-                      "session_id": session_id[0]
+                      "session_id": session_id[0],
+                      "task_type":settingClasses
                 },
                 {
                     headers: {
@@ -191,72 +193,132 @@ export default function Classification(props) {
 
     const size = 400;
     const concept_data_view = [];
-    for (let i = 0; i < concept_data.length; i++) {
-        concept_data_view.push({
-            view:
-                <div className={"conceptRow" + (i % 2).toString()}>
-                        <h5>
-                            {concept_data[i].concept}
-                        </h5>
-                        <div className="totalBar">
-                            <div className="typicality" style={{width: (size * concept_data[i].typicality).toString() + "px"}}/>
-                            <div className="typicalityText">typicality: {concept_data[i].typicality}</div>
-                        </div>
-
-                        <div>
-                            <div className="conceptCorrectBar"
-                                 style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
-                                {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
-                            </div>
-
-                            <div className="conceptIncorrectBar"
-                                 style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
-                            </div>
-
-                            <div className="restBar"
-                                 style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
-                                 {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
-                            </div>
-                        </div>
-                        
-                        
-                        <br>
-                        </br>
-                    </div>
-        })
-    }
-    const rule_data_view = [];
-    sort(rule_data, sorting);
-    for (let i = 0; i < rule_data.length; i++) {
-        for (let e = 0; e < rule_data[i].innerArray.length; e++) {
-            rule_data_view.push({
+    if (settingClasses == "binary"){
+        for (let i = 0; i < concept_data.length; i++) {
+            concept_data_view.push({
                 view:
-                    <div className={"ruleRow" + (i%2).toString()}>
+                    <div className={"conceptRow" + (i % 2).toString()}>
                             <h5>
-                                {rule_data[i].innerArray[e].concept}
+                                {concept_data[i].concept}
                             </h5>
                             <div className="totalBar">
-                                <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
-                                <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
+                                <div className="typicality" style={{width: (size * concept_data[i].typicality).toString() + "px"}}/>
+                                <div className="typicalityText">typicality: {concept_data[i].typicality}</div>
                             </div>
 
                             <div>
-                                <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
-                                {(rule_data[i].innerArray[e].percentage_correct * 100).toFixed(2).toString() + "%"}
+                                <div className="conceptCorrectBar"
+                                     style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
+                                    {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
                                 </div>
 
-                                <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                <div className="conceptIncorrectBar"
+                                     style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
                                 </div>
 
-                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
-                                {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
+                                <div className="restBar"
+                                     style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                     {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
                                 </div>
                             </div>
+                            
                             
                             <br>
                             </br>
                         </div>
             })
+        }
+    }else{
+        for (let i = 0; i < concept_data.length; i++) {
+            concept_data_view.push({
+                view:
+                    <div className={"conceptRow" + (i % 2).toString()}>
+                            <h5>
+                                {concept_data[i].concept}
+                            </h5>
+                            <div className="totalBar">
+                                <div className="typicality" style={{width: (size * concept_data[i].typicality).toString() + "px"}}/>
+                                <div className="typicalityText">typicality: {concept_data[i].typicality}</div>
+                            </div>
+
+                            <div>
+                                
+
+                                <div className="restBar"
+                                     style={{width: (size * ((concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                     {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
+                                </div>
+                            </div>
+                            
+                            
+                            <br>
+                            </br>
+                        </div>
+            })
+        }
+    }
+    const rule_data_view = [];
+    sort(rule_data, sorting);
+    if (settingClasses == "binary"){
+        for (let i = 0; i < rule_data.length; i++) {
+            for (let e = 0; e < rule_data[i].innerArray.length; e++) {
+                rule_data_view.push({
+                    view:
+                        <div className={"ruleRow" + (i%2).toString()}>
+                                <h5>
+                                    {rule_data[i].innerArray[e].concept}
+                                </h5>
+                                <div className="totalBar">
+                                    <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
+                                    <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
+                                </div>
+
+                                <div>
+                                    <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
+                                    {(rule_data[i].innerArray[e].percentage_correct * 100).toFixed(2).toString() + "%"}
+                                    </div>
+
+                                    <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                    </div>
+
+                                    <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                    {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
+                                    </div>
+                                </div>
+                                
+                                <br>
+                                </br>
+                            </div>
+                })
+            }
+        }
+    }else{
+        for (let i = 0; i < rule_data.length; i++) {
+            for (let e = 0; e < rule_data[i].innerArray.length; e++) {
+                rule_data_view.push({
+                    view:
+                        <div className={"ruleRow" + (i%2).toString()}>
+                                <h5>
+                                    {rule_data[i].innerArray[e].concept}
+                                </h5>
+                                <div className="totalBar">
+                                    <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
+                                    <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
+                                </div>
+
+                                <div>
+                                    
+
+                                    <div className="restBar" style={{width: (size * ((rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                    {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
+                                    </div>
+                                </div>
+                                
+                                <br>
+                                </br>
+                            </div>
+                })
+            }
         }
     }
 
@@ -302,99 +364,254 @@ export default function Classification(props) {
                 </div>
         })
     }
-
-    return (
-        <div>
-            <div className="backHeader">
-                <Link className={"link"} to={{pathname: "/home?tab=3"}}>
-                    <Button className="backButton">Back</Button>
-                </Link>
-            </div>
-            <div className="errorDiv">
-            </div>
-
-            <div className={"everything"}>
-                <div>
-                    <div className={"chart"}>
-                        <div className="sort">
-                            <div className="subtitle"><h1>Order of representation</h1></div>
-                            <RadioGroup value={sorting} onChange={(event) => {
-                                setSorting(event.target.value);
-                                sort(concept_data, sorting);
-                                sort(rule_data, sorting);
-                            }}>
-                                <Radio value={"concept"}>Alphabetical order</Radio><br/>
-                                <Radio value={"typicality"}>Typicality</Radio><br/>
-                                <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
-                            </RadioGroup>
-                        </div>
-                        
-                        <Pie
-                            data={{
-                                labels: binaryData.labels,
-                                datasets: binaryData.datasets
-                            }}
-                            options = {{
-                                radius: "70%",
-                                maintainAspectRatio: true,
-                            }}
-                        />
-                        <p>Total images: {total_images}</p>
-                    </div>
-
-                    <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
-                        <div className={"main-wrap"}>
-                            <div className={"left"}>
-                                <h2>Significant concepts in the images within this binary task</h2>
-                                <div className={"main-wrap"}>
-                                    <p style={{color:"#32CD32"}}>Percentage of correct predictions among concept-associated images</p>
-                                    <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
-                                </div>
-                                <hr/>
-                                <div>
-                                    {
-                                        concept_data_view.map(item => (
-                                            <>
-                                                {item.view}
-                                            </>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-
-                            <div className={"right"}>
-                                <h2>Significant rules in the images within this binary task</h2>
-                                <h4> </h4>
-                                <div className={"main-wrap"}>
-                                    <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
-                                    <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
-                                </div>
-                                <hr/>
-                                <div>
-                                    {
-                                        rule_data_view.map(item => (
-                                            <>
-                                                {item.view}
-                                            </>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/*Here the images will come */}
-                <div className="under-charts">
-                    {
-                        columns.map(item => (
-                            <>
-                                {item.view}
-                            </>
-                        ))
+    const fetchData = (event) => {
+        const errorDiv = document.getElementsByClassName("errorDiv")[0];
+        console.log(settingClasses);
+        axios
+            .post(
+                binary_query_url,
+                {
+                      "query_type": "rules",
+                      "image_setting": "binary_matrix",
+                      "add_class": [binaryMatrixClasses[0], binaryMatrixClasses[1]],
+                      "session_id": session_id[0],
+                      "task_type":settingClasses
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Token " + token,
                     }
+                }
+
+            )
+            .then(response => {
+                setConceptTypicality(response.data['concepts']);
+                setRuleTypicality(response.data['rules']);
+            })
+            .catch(function (error) {
+
+                const e = document.createElement("div")
+                e.innerHTML = "Something went wrong when retrieving the typicality scores. Try again later."
+                e.className = "error"
+                errorDiv.appendChild(e)
+
+                setConceptTypicality([]);
+                setRuleTypicality([]);
+            });
+    }
+
+    if (settingClasses == "binary"){
+        return (
+            <div>
+                <div className="backHeader">
+                    <Link className={"link"} to={{pathname: "/home?tab=3"}}>
+                        <Button className="backButton">Back</Button>
+                    </Link>
+                </div>
+                <div className="errorDiv">
+                </div>
+
+                <div className={"everything"}>
+                    <div>
+                        <div className={"chart"}>
+                            <div className="sort">
+                                <div className="subtitle"><h1>Order of representation</h1></div>
+                                <RadioGroup value={sorting} onChange={(event) => {
+                                    setSorting(event.target.value);
+                                    sort(concept_data, sorting);
+                                    sort(rule_data, sorting);
+                                }}>
+                                    <Radio value={"concept"}>Alphabetical order</Radio><br/>
+                                    <Radio value={"typicality"}>Typicality</Radio><br/>
+                                    <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
+                                </RadioGroup>
+                            </div>
+                            <div className="sort">
+                                <div className="subtitle"><h1>Settings</h1></div>
+                                <RadioGroup value={settingClasses} onChange={(event) => {
+                                    setSettingClasses(event.target.value);
+
+                                    
+                                }}>
+                                    <Radio value={"binary"}>Binary task</Radio><br/>
+                                    <Radio value={"4task"}>Distinction between correct and incorrect predictions (4-class task)</Radio><br/>
+                                </RadioGroup>
+                                <Button onClick={fetchData}>Search</Button>
+                            </div>
+                            
+                            <Pie
+                                data={{
+                                    labels: binaryData.labels,
+                                    datasets: binaryData.datasets
+                                }}
+                                options = {{
+                                    radius: "70%",
+                                    maintainAspectRatio: true,
+                                }}
+                            />
+                            <p>Total images: {total_images}</p>
+                        </div>
+
+                        <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
+                            <div className={"main-wrap"}>
+                                <div className={"left"}>
+                                    <h2>Significant concepts in the images within this binary task</h2>
+                                    <div className={"main-wrap"}>
+                                        <p style={{color:"#32CD32"}}>Percentage of correct predictions among concept-associated images</p>
+                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
+                                    </div>
+                                    <hr/>
+                                    <div>
+                                        {
+                                            concept_data_view.map(item => (
+                                                <>
+                                                    {item.view}
+                                                </>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+
+                                <div className={"right"}>
+                                    <h2>Significant rules in the images within this binary task</h2>
+                                    <h4> </h4>
+                                    <div className={"main-wrap"}>
+                                        <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
+                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
+                                    </div>
+                                    <hr/>
+                                    <div>
+                                        {
+                                            rule_data_view.map(item => (
+                                                <>
+                                                    {item.view}
+                                                </>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/*Here the images will come */}
+                    <div className="under-charts">
+                        {
+                            columns.map(item => (
+                                <>
+                                    {item.view}
+                                </>
+                            ))
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }else{
+        return (
+            <div>
+                <div className="backHeader">
+                    <Link className={"link"} to={{pathname: "/home?tab=3"}}>
+                        <Button className="backButton">Back</Button>
+                    </Link>
+                </div>
+                <div className="errorDiv">
+                </div>
+
+                <div className={"everything"}>
+                    <div>
+                        <div className={"chart"}>
+                            <div className="sort">
+                                <div className="subtitle"><h1>Order of representation</h1></div>
+                                <RadioGroup value={sorting} onChange={(event) => {
+                                    setSorting(event.target.value);
+                                    sort(concept_data, sorting);
+                                    sort(rule_data, sorting);
+                                }}>
+                                    <Radio value={"concept"}>Alphabetical order</Radio><br/>
+                                    <Radio value={"typicality"}>Typicality</Radio><br/>
+                                    <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
+                                </RadioGroup>
+                            </div>
+                            <div className="sort">
+                                <div className="subtitle"><h1>Settings</h1></div>
+                                <RadioGroup value={settingClasses} onChange={(event) => {
+                                    setSettingClasses(event.target.value);
+
+                                    
+                                }}>
+                                    <Radio value={"binary"}>Binary task</Radio><br/>
+                                    <Radio value={"4task"}>Distinction between correct and incorrect predictions (4-class task)</Radio><br/>
+                                </RadioGroup>
+                                <Button onClick={fetchData}>Search</Button>
+                            </div>
+                            
+                            <Pie
+                                data={{
+                                    labels: binaryData.labels,
+                                    datasets: binaryData.datasets
+                                }}
+                                options = {{
+                                    radius: "70%",
+                                    maintainAspectRatio: true,
+                                }}
+                            />
+                            <p>Total images: {total_images}</p>
+                        </div>
+
+                        <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
+                            <div className={"main-wrap"}>
+                                <div className={"left"}>
+                                    <h2>Significant concepts in the images within this binary task</h2>
+                                    <div className={"main-wrap"}>
+                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
+                                    </div>
+                                    <hr/>
+                                    <div>
+                                        {
+                                            concept_data_view.map(item => (
+                                                <>
+                                                    {item.view}
+                                                </>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+
+                                <div className={"right"}>
+                                    <h2>Significant rules in the images within this binary task</h2>
+                                    <h4> </h4>
+                                    <div className={"main-wrap"}>
+                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
+                                    </div>
+                                    <hr/>
+                                    <div>
+                                        {
+                                            rule_data_view.map(item => (
+                                                <>
+                                                    {item.view}
+                                                </>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/*Here the images will come */}
+                    <div className="under-charts">
+                        {
+                            columns.map(item => (
+                                <>
+                                    {item.view}
+                                </>
+                            ))
+                        }
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }

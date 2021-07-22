@@ -568,7 +568,7 @@ def query_all_concepts_scores(input):
                                                                 binary_task_classes=binary_task_classes,
                                                                 session_id=session_id)
 
-    print("list concpts", list_concepts)
+    #print("list concpts", list_concepts)
     for i in list_concepts:
         input_info = input.copy()
         if input["IMAGE_SET_SETTING"] == "ALL_IMAGES":
@@ -643,6 +643,9 @@ def query_rules(input):
     :param input: The incoming data from a request in a JSON format, as a python dict
     :return: The filtered rules and concepts, along with a HTTP status for if it was successful or not.
     """
+
+    print("input", input)
+
     session_id = -1
     to_filter = []
     or_queries = []
@@ -659,6 +662,7 @@ def query_rules(input):
     exclude_true_class = []
     only_true_class = ["ALL"]
     image_setting = None
+    task_setting = "binary"
 
     # By default the settings here are the default settings we have given for the rule mining pipeline
     max_ant_length = 10
@@ -743,6 +747,8 @@ def query_rules(input):
 
         elif point == "only_predicted_class":
             only_predicted_class = input[point]
+        elif point == "task_type":
+            task_setting = input[point]
 
         else:
             mistake_found = True
@@ -793,7 +799,7 @@ def query_rules(input):
                                                             exclude_true_classes=exclude_true_class,
                                                             only_true_class=only_true_class,
                                                             only_predicted_class=only_predicted_class,
-                                                            session_id=session_id)
+                                                            session_id=session_id, task_type=task_setting)
         return res, stat
 
     # If there is a value error thrown, it will catch it. Currently there are no errors that would realistically occur
