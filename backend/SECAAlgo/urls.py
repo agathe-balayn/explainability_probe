@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from .views import confusion_matrix, query_db, all_images_from_problem_view, data_all_images, query_all, \
-    query_concepts_and_rules, data_overall_explanations, data_specific_explanations, \
+    query_concepts_and_rules, data_overall_explanations, data_specific_explanations, data_specific_explanations_more_complete, \
     query_specific_images, images_matrix, NotesView, add_data, add_image, get_predictions, \
     get_f1, query_concept_matrix, query_scores
 
@@ -19,6 +19,7 @@ urlpatterns = [
     path('Explore/data_all_images/', data_all_images, name="data_all_images"),
     path('Explore/data_overall_explanations/', data_overall_explanations, name="data_overall_explanations"),
     path('Explore/data_specific_explanations/', data_specific_explanations, name="data_specific_explanations"),
+    path('Explore/data_specific_explanations_more_complete/', data_specific_explanations_more_complete, name="data_specific_explanations_more_complete"),
 
     # Endpoints related to Query Interface
     path('Query/query/', query_db, name="query"),

@@ -267,9 +267,9 @@ class QueryClassificationFormulas extends React.Component {
             let idx_col = 0
             for (let j in classes){
                 matrix_top[idx_row][idx_col] = []
-                matrix_top[idx_row][idx_col][0] = r.data.top_number[classes[i]][classes[j]]
-                matrix_top[idx_row][idx_col][1] = r.data.bottom_number[classes[i]][classes[j]]
-                matrix_bottom[idx_row][idx_col] = r.data.bottom_number[classes[i]][classes[j]]
+                matrix_top[idx_row][idx_col][0] = (r.data.top_number[classes[i]][classes[j]]).toFixed(2)
+                matrix_top[idx_row][idx_col][1] = (r.data.bottom_number[classes[i]][classes[j]]).toFixed(2)
+                matrix_bottom[idx_row][idx_col] = (r.data.bottom_number[classes[i]][classes[j]]).toFixed(2)
                 idx_col ++
             }
             idx_row ++
@@ -474,7 +474,10 @@ class QueryClassificationFormulas extends React.Component {
                         </tr>
                     ))}
                 </table>
-            </div>)
+            <p>Legend: Top figure: frequency of concept among data samples in the cell, Bottom figure: frequency of concept among entire dataset</p> 
+            
+            </div>
+            )
         }
 
         /**
@@ -553,27 +556,21 @@ class QueryClassificationFormulas extends React.Component {
 
                         <div>
                             <div className="conceptCorrectBar"
-                                 style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px"}}>
+                                 style={{width: (size * concept_data[i].percentage_correct * concept_data[i].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
                                 {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
                             </div>
 
                             <div className="conceptIncorrectBar"
-                                 style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px"}}>
+                                 style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
                             </div>
 
                             <div className="restBar"
-                                 style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px"}}>
+                                 style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                 {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
                             </div>
                         </div>
-                        <br>
-                        </br>
-                        <div>
-                            <div className="percentageOfTotalBar"
-                                 style={{width: (size * concept_data[i].percentage_present).toString() + "px"}}>
-                                {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
-                            <div className="pointer"></div>
-
-                        </div>
+                        
+                        
                         <br>
                         </br>
                     </div>
@@ -598,25 +595,18 @@ class QueryClassificationFormulas extends React.Component {
                             </div>
 
                             <div>
-                                <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px"}}>
+                                <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
                                 {(rule_data[i].innerArray[e].percentage_correct * 100).toFixed(2).toString() + "%"}
                                 </div>
 
-                                <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px"}}>
+                                <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
                                 </div>
 
-                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px"}}>
-
+                                <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
                                 </div>
                             </div>
-                            <br>
-                            </br>
-                            <div>
-                                <div className="percentageOfTotalBar" style={{width: (size * rule_data[i].innerArray[e].percentage_present).toString() + "px"}}>
-                                    {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}</div>
-                                <div className="pointer"></div>
-
-                            </div>
+                            
                             <br>
                             </br>
                         </div>
@@ -640,8 +630,8 @@ class QueryClassificationFormulas extends React.Component {
                                 <h2>Concepts</h2>
                                 <h4>Legend:</h4>
                                 <div className={"main-wrap"}>
-                                    <p id={"conceptP1"}>Percentage of correct predictions among concept-associated images</p>
-                                    <p id={"conceptP2"}>Percentage of concept-associated images in dataset</p>
+                                    <p style={{color:"#32CD32"}}>Percentage of correct predictions among concept-associated images</p>
+                                    <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
                                 </div>
                                 <label>Sort by: </label>
                                 <Select id={"selectFilter"} dropdownMatchSelectWidth={false} onChange={this.sortConceptsByFilter}>
@@ -664,8 +654,8 @@ class QueryClassificationFormulas extends React.Component {
                                 <h2>Rules</h2>
                                 <h4> </h4>
                                 <div className={"main-wrap"}>
-                                    <p id={"ruleP1"}>Percentage of correctly classified images within rule-associated images</p>
-                                    <p id={"ruleP2"}>Percentage of concept-associated images among images with the predicted class</p>
+                                    <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
+                                    <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
                                 </div>
                                 <label>Sort by: </label>
                                 <Select id={"selectFilter"} dropdownMatchSelectWidth={false} onChange={this.sortRulesByFilter}>
@@ -723,7 +713,7 @@ class QueryClassificationFormulas extends React.Component {
                         </div>
                     </div>
 
-                    <Button onClick={this.getConfusionMatrix} id={"MatrixBtn"} style={{width: 200}}>Show Confusion Matrix</Button>
+                    <Button onClick={this.getConfusionMatrix} id={"MatrixBtn"} style={{width: 200}}>Show Concept Matrix</Button>
                     <Button onClick={this.getTypicalityScore} id={"ScoreBtn"} style={{width: 200}}>Show Typicality Score</Button>
 
                 </div>

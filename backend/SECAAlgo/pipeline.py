@@ -562,7 +562,7 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
         antecedents.append(antecedent)
         supp_conf.append((antecedent, row[1].get(
             "support"), row[1].get("confidence")))
-    print(len(data_mining_rules_filtered))
+    #print(len(data_mining_rules_filtered))
     return data_mining_rules_filtered, antecedents, supp_conf
 
 
@@ -736,13 +736,13 @@ def execute_image_query_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         structured_representation = structured_representation[structured_representation["true_label"] != exclude_true_classes[0]]
 
 
-    print(structured_representation)
+    #print(structured_representation)
     # Filter images based on queried concepts.
 
     # Create the column of the concepts.
     #print("filter concetps")
-    print(or_not_query)
-    print(or_queries)
+    #print(or_not_query)
+    #print(or_queries)
     if (len(or_not_query) > 0) or (len(or_queries) > 0):
         structured_representation["filter_concepts"] = structured_representation.apply(lambda x: filter_concept_function(x, or_queries, or_not_query), axis=1)
     else:
@@ -861,6 +861,29 @@ def execute_basic_rule_mining_pipeline(image_set_setting, return_setting="CONCEP
         print("no rule")
         return [], [], []
 
+def get_list_concepts(image_set_setting, binary_task_classes=None,
+                                 session_id=-1):
+    if image_set_setting not in VALID_IMAGE_SET_SETTINGS:
+        return {
+                   "Non-valid input for settings"
+               }, [], status.HTTP_400_BAD_REQUEST
+
+    if session_id < 0:
+        return {
+                   "Non-valid input for session id"
+               }, [], status.HTTP_400_BAD_REQUEST
+    # 1. Get subset of images
+    image_list, stat = retrieve_images(
+        image_set_setting, binary_task_classes, session_id)
+    #print(image_list)
+    #print(image_list)
+    if stat != status.HTTP_200_OK:
+        return image_list, stat
+
+    # 2. Make tabular representation with only these images
+    structured_representation, semantic_features = make_tabular_representation(
+        image_list, image_set_setting)
+    return list(structured_representation.columns)[3:-1]
 
 
 def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
@@ -918,7 +941,7 @@ def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONC
     #print(len(positive_rules))
     list_scores = []
     list_classes = list(set(structured_representation["predicted_label"]))
-    print(list_classes)
+    #print(list_classes)
     for class_name in list_classes:
         common_supp = len(structured_representation.loc[(structured_representation["predicted_label"] == class_name) & (structured_representation["filter_concepts"] == 1)])
         cons_sup = len(structured_representation[structured_representation["predicted_label"] == class_name])
@@ -928,10 +951,10 @@ def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONC
          "antecedent_supp": ant_sup,\
          "ant_cons_supp": common_supp,\
          "lift": (common_supp)/(cons_sup * ant_sup)})
-    print(list_scores)
+    #print(list_scores)
     semantic_feature_stats_dict = compute_statistical_tests_custom(
         structured_representation[["image_name", "true_label", "predicted_label", "filter_concepts", "classification_check"]])
-    print(semantic_feature_stats_dict)
+    #print(semantic_feature_stats_dict)
     return list_scores, structured_representation[["image_name", "true_label", "predicted_label", "filter_concepts", "classification_check"]], semantic_feature_stats_dict
 
 
@@ -1144,7 +1167,7 @@ def post_process_concepts_rules(list_scores, struct_rep, stat_scores, list_rules
     
     # Get concept name
     concept_name_string = string_concept_name(concept_name)
-    print(concept_name_string)
+    #print(concept_name_string)
     #print("name", concept_name_string)
     #print(list_scores)
     #print(struct_rep)

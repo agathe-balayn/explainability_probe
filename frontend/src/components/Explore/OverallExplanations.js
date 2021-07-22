@@ -7,7 +7,7 @@ import "../../css/OverallExplanation.less";
 const RadioGroup = Radio.Group;
 
 function OverallExplanations() {
-  const size = 600;
+  const size = 300;
   const [image_setting, set_image_setting] = useState([""]);
   const [concept_data, set_concept_data] = useState({});
   const [table_data, set_table_data] = useState([]);
@@ -48,7 +48,7 @@ function OverallExplanations() {
             var min_idx = i;
             for (let j = i + 1; j < array.length; j++) {
 
-                if (array[j][on] < array[min_idx][on]) {
+                if (array[j][on] > array[min_idx][on]) {
                     min_idx = j;
 
                 }
@@ -68,6 +68,7 @@ function OverallExplanations() {
   const make_table_data = (formatted_concepts) => {
     var data = [];
     for (var i = 0; i < formatted_concepts.length; i++) {
+      console.log(formatted_concepts[i])
       data.push({
         antecedent: formatted_concepts[i].antecedent,
         statistics: (
@@ -103,9 +104,9 @@ function OverallExplanations() {
               style={{
                 minHeight: "20px",
                 width:
-                  (size * formatted_concepts[i].percentage_correct).toString() +
+                  (size * formatted_concepts[i].percentage_correct * formatted_concepts[i].percent_present).toString() +
                   "px",
-                backgroundColor: "#78949f",
+                backgroundColor: "#7CFC00",
                 display: "inline-block",
                 float: "left",
               }}
@@ -115,13 +116,14 @@ function OverallExplanations() {
               style={{
                 minHeight: "20px",
                 width:
-                  (size * formatted_concepts[i].percentage_wrong).toString() +
+                  (size * formatted_concepts[i].percent_present * formatted_concepts[i].percentage_wrong).toString() +
                   "px",
-                backgroundColor: "#93bdcb",
+                backgroundColor: "#FF0000",
                 display: "inline-block",
                 float: "left",
               }}
             ></div>
+
             <div
               className="restBar"
               style={{
@@ -129,25 +131,24 @@ function OverallExplanations() {
                 width:
                   (
                     size *
-                    (1 -
-                      formatted_concepts[i].percentage_wrong -
-                      formatted_concepts[i].percentage_correct)
+                    (1 -formatted_concepts[i].percent_present)
                   ).toString() + "px",
-                backgroundColor: "#dde5f6",
+                backgroundColor: "#D3D3D3",
                 display: "inline-block",
                 float: "left",
               }}
-            ></div>
+            >{"In dataset: " + ((formatted_concepts[i].percent_present) * 100).toPrecision(2).toString() + "%"}</div>
             <div style={{float: "left" }}>
 
                 <dl style={{ marginTop: "10px" }}>
-                  <dt class="red"></dt>
-                  <p>{formatted_concepts[i].percentage_correct.toPrecision(3)}</p>
 
                   <dt class="green"></dt>
-                  <p>{formatted_concepts[i].percentage_wrong.toPrecision(3)}</p>
+                  <p>{formatted_concepts[i].percentage_correct.toPrecision(2).toString() + "%"}</p>
+                  <dt class="red"></dt>
+                  <p>{formatted_concepts[i].percentage_wrong.toPrecision(2).toString() + "%"}</p>
                 </dl>
               </div>
+            
           </div>
         ),
       });
@@ -156,15 +157,20 @@ function OverallExplanations() {
   };
 
   const formatConceptData = (concept_data) => {
+
     var formatted_data = [];
     const keys = Object.keys(concept_data);
     const values = Object.values(concept_data);
+
     for (var i = 0; i < keys.length; i++) {
+      console.log("data")
+    console.log(values[i])
       const table_entry = {
         antecedent: keys[i],
         typicality: values[i].typicality,
         percentage_correct: values[i].percent_correct,
-        percentage_wrong: values[i].percent_present,
+        percent_present: values[i].percent_present,
+        percentage_wrong: 1 - values[i].percent_correct,
       };
       formatted_data.push(table_entry);
     }
@@ -184,6 +190,7 @@ function OverallExplanations() {
           })
       .then(function (response) {
         var data = response.data.result;
+        console.log(data)
         set_concept_data(data["concepts"]);
       })
       .catch(function (error) {

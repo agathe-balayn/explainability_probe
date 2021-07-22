@@ -8,7 +8,7 @@ from .serializer import UniversalSerializer, SerializerClassNotFoundException
 from .seca_helper_methods import get_tabular_representation, get_tabular_representation_rule_mining, \
     save_csv_predictions, link_annotations, compute_statistical_tests_custom
 from .pipeline import execute_rule_mining_pipeline, post_process_concepts_rules
-from .query import query_rules, query_classes, universal_query, query_images, simple_rule_search, query_score_concepts
+from .query import query_rules, query_classes, universal_query, query_images, simple_rule_search, query_score_concepts, query_all_concepts_scores
 from .models import Sessions, Images, Notes
 from django.core.exceptions import FieldError
 from django.views.generic import View
@@ -225,7 +225,7 @@ def query_concept_matrix(request):
     for row_gt in list_labels:
         for col_pred in list_labels:
             #print(count_concept.at[row_gt, col_pred], image_in_mat.at[row_gt, col_pred], (count_concept.at[row_gt, col_pred] / image_in_mat.at[row_gt, col_pred]))
-            top_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / image_in_mat.at[row_gt, col_pred]) if image_in_mat.at[row_gt, col_pred] != 0 else 0.0
+            top_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / image_in_mat.at[row_gt, col_pred]) *100 if image_in_mat.at[row_gt, col_pred] != 0 else 0.0
     #print(top_number)
     #for col in top_number:
     #    print(top_number[col].unique())
@@ -237,7 +237,7 @@ def query_concept_matrix(request):
     if total_concept > 0:
         for row_gt in list_labels:
             for col_pred in list_labels:
-                bottom_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / total_concept)
+                bottom_number.at[row_gt, col_pred] = (count_concept.at[row_gt, col_pred] / total_concept) *100
     else:
         bottom_number.loc[:, :] = 0.0
     #for col in bottom_number:
@@ -477,6 +477,7 @@ def data_specific_explanations(request):
                     retrieve.
     :return: A response object with the specific explanation's data
     """
+    print(request.data)
     session_id = request.data['session_id']
     setting = request.data["IMAGE_SET_SETTING"]
     if (setting == "CORRECT_PREDICTION_ONLY"):
@@ -508,6 +509,84 @@ def data_specific_explanations(request):
                                        result["rules"][rule][class_]["percent_present"],
                                        result["rules"][rule][class_]["percent_correct"],
                                        result["rules"][rule][class_]["typicality"])
+    #print(data)
+
+    # If typicality score not significant, write "nan"
+
+    return Response({"data": data})
+
+
+@api_view(['post'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([
+    TokenAuthentication,
+])
+def data_specific_explanations_more_complete(request):
+    """
+    Retrieves specific explanations for the specified session_id.
+    :param request: A HTTP POST request which contains the session id and the image setting which the user wants to
+                    retrieve.
+    :return: A response object with the specific explanation's data
+    """
+    print(request.data)
+    session_id = request.data['session_id']
+    setting = request.data["IMAGE_SET_SETTING"]
+    if (setting == "CORRECT_PREDICTION_ONLY"):
+        result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY",
+                                                                 session_id=session_id)
+    elif (setting == "ALL_IMAGES"):
+        result, supp_conf, unused = execute_rule_mining_pipeline(
+            image_set_setting="ALL_IMAGES", session_id=session_id)
+    else:
+        result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY",
+                                                                 session_id=session_id)
+    rules = {}
+    for rule in result["rules"]:
+
+        for key in supp_conf:
+            if key[0] == rule:
+                rules[rule] = (key[1], key[2])
+                break
+    data = {}
+    for rule in result["rules"]:
+        for class_ in result["rules"][rule]:
+            if not class_ in data:
+                data[class_] = {}
+
+            for i in rules:
+                if rule == i:
+                    data[class_][i] = (rules[i][0],
+                                       rules[i][1],
+                                       result["rules"][rule][class_]["percent_present"],
+                                       result["rules"][rule][class_]["percent_correct"],
+                                       result["rules"][rule][class_]["typicality"])
+    #print(data)
+
+    # Also get typicality of simple concepts for each class.
+    print("will compute more concepts")
+    list_concepts, l_s, l_struct, s_stat = query_all_concepts_scores(request.data)
+    for concept, a, b, c in zip(list_concepts, l_s, l_struct, s_stat):
+        for consequent_info in l_s:
+
+            if not consequent_info["consequent_name"] in data:
+                data[consequent_info["consequent_name"]] = {}
+            if concept not in  list(data[consequent_info["consequent_name"]].keys()):
+
+                percent_present = round(len(b.loc[(b["filter_concepts"] == 1) & (b["predicted_label"] == consequent_info["consequent_name"])]) / len(b), 3)
+                if len(b.loc[(b["filter_concepts"] == 1) & (b["predicted_label"] == consequent_info["consequent_name"])]) == 0:
+                    percent_correct =0.0
+                else:
+                    percent_correct =round(len(b.loc[(b["filter_concepts"] == 1) & (b["predicted_label"] == consequent_info["consequent_name"]) & (b["classification_check"] == "Correctly classified")])/ len(b.loc[(b["filter_concepts"] == 1) & (b["predicted_label"] == consequent_info["consequent_name"])]), 3)
+                if a["ant_cons_supp"] != 0:
+                    confidence = round(a["ant_cons_supp"] / a["antecedent_supp"], 3)
+                else:
+                    confidence = 0
+
+                
+                data[consequent_info["consequent_name"]][concept] = (percent_present, confidence, percent_present, percent_correct,\
+                    round(a["lift"], 3))
+
+    # If typicality score not significant, write "nan"
 
     return Response({"data": data})
 

@@ -24,6 +24,7 @@ const add_image_url = domain + "api/SECAAlgo/add_image/"
 const add_data_url = domain + "api/SECAAlgo/add_data/"
 const algo_url = domain + "algo/"
 const data_specific_explanations_url = domain + "api/SECAAlgo/Explore/data_specific_explanations/"
+const data_specific_explanations_more_complete_url = domain + "api/SECAAlgo/Explore/data_specific_explanations_more_complete/"
 
 export {
   auth,
@@ -49,5 +50,6 @@ export {
   add_image_url,
   add_data_url,
   algo_url,
-  data_specific_explanations_url
+  data_specific_explanations_url,
+  data_specific_explanations_more_complete_url
 };

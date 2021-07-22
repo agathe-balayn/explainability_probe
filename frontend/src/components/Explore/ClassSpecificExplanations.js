@@ -2,7 +2,7 @@ import React, {useState, useEffect} from "react";
 import 'antd/dist/antd.css';
 import '../../css/ClassSpecificExplanations.css';
 import axios from "axios";
-import {data_specific_explanations_url} from "../../API"
+import {data_specific_explanations_url, data_specific_explanations_more_complete_url} from "../../API"
 
 import { Radio, Slider, Button, Table } from "antd";
 const RadioGroup = Radio.Group;
@@ -28,7 +28,30 @@ function ClassSpecificExplanations() {
                 Authorization: "Token " + token,
             },
 
-      })
+         })
+          .then(function (response) {
+
+            setTable(response.data["data"]);
+            update()
+          })
+          .catch(function (error) {
+            errorDiv.innerHTML = ""
+            const e = document.createElement("div")
+            e.className = "error"
+            e.innerHTML = "Something went retrieving the statistics. Try again later. Consult the documentation if necessary."
+            errorDiv.appendChild(e)
+          });
+
+          // Run a second time with more complete explanations.
+          axios
+          .post(data_specific_explanations_more_complete_url,
+          JSON.stringify({ IMAGE_SET_SETTING: image_setting, "session_id" : session_id }), {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Token " + token,
+            },
+
+         })
           .then(function (response) {
 
             setTable(response.data["data"]);
