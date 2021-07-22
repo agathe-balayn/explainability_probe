@@ -124,7 +124,7 @@ function ClassSpecificExplanations() {
             var min_idx = i;
             for (let j = i + 1; j < orderedKeys.length; j++) {
 
-                if (array[orderedKeys[j]][index] < array[orderedKeys[min_idx]][index]) {
+                if (array[orderedKeys[j]][index] > array[orderedKeys[min_idx]][index]) {
                     min_idx = j;
 
                 }

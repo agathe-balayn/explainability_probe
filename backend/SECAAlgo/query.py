@@ -10,7 +10,7 @@ import pandas as pd
 from rest_framework import status
 from .serializer import UniversalSerializer, SerializerClassNotFoundException
 from django.core.exceptions import FieldError
-from .pipeline import execute_rule_mining_pipeline, execute_image_query_pipeline, execute_basic_rule_mining_pipeline, execute_basic_concept_score_pipeline, get_list_concepts
+from .pipeline import execute_rule_mining_pipeline, execute_image_query_pipeline, execute_basic_rule_mining_pipeline, execute_basic_concept_score_pipeline, get_list_concepts, execute_concept_mining_pipeline
 
 
 def query_classes(input):
@@ -569,6 +569,49 @@ def query_all_concepts_scores(input):
                                                                 session_id=session_id)
 
     #print("list concpts", list_concepts)
+
+
+    print("test", input)
+    """
+    input_info = input.copy()
+    if input["IMAGE_SET_SETTING"] == "ALL_IMAGES":
+        image_setting = "all"
+
+    elif input["IMAGE_SET_SETTING"] == "CORRECT_PREDICTION_ONLY":
+        image_setting = "correct_only"
+
+    elif input["IMAGE_SET_SETTING"] == "WRONG_PREDICTION_ONLY":
+        image_setting = "incorrect_only"
+
+    elif input["IMAGE_SET_SETTING"] == "BINARY_MATRIX_VIEW":
+        image_setting = "binary_matrix"
+    input_info["include"] = list_concepts
+    input_info["image_setting"] = image_setting
+    del input_info["IMAGE_SET_SETTING"]   
+    """ 
+    #list_scores, struct_rep, stat_scores = query_score_concepts(input_info)
+
+
+    structured_representation, semantic_feature_stats_dict = execute_concept_mining_pipeline(image_set_setting=image_setting,
+                                                                binary_task_classes=binary_task_classes,
+                                                                max_antecedent_length=max_ant_length,
+                                                                min_support_score=min_support_score,
+                                                                min_lift_score=min_lift_score,
+                                                                min_confidence_score=min_confidence_score,
+                                                                filter_concepts=filtered_concepts, or_queries=or_sets,
+                                                                desired_classes=desired_classes, or_exclude=exclude_or,
+                                                                or_not_query=or_not_divided,
+                                                                exclude_concepts=excluded_concepts,
+                                                                class_selection=class_selection,
+                                                                predicted_class=predicted_class,
+                                                                not_predicted_class=not_predicted_class,
+                                                                exclude_predicted_classes=exclude_predicted_class,
+                                                                exclude_true_classes=exclude_true_class,
+                                                                only_true_class=only_true_class,
+                                                                only_predicted_class=only_predicted_class,
+                                                                session_id=session_id)
+
+    """
     for i in list_concepts:
         input_info = input.copy()
         if input["IMAGE_SET_SETTING"] == "ALL_IMAGES":
@@ -592,7 +635,10 @@ def query_all_concepts_scores(input):
         l_s.append(list_scores)
         l_struct.append(struct_rep)
         s_stat.append(stat_scores)
+
     return list_concepts,l_s, l_struct, s_stat
+    """
+    return list_concepts, structured_representation, semantic_feature_stats_dict
 
 
 def query_rules(input):

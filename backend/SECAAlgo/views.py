@@ -528,7 +528,7 @@ def data_specific_explanations_more_complete(request):
                     retrieve.
     :return: A response object with the specific explanation's data
     """
-    print(request.data)
+    print("data_specific_explanations_more_complete", request.data)
     session_id = request.data['session_id']
     setting = request.data["IMAGE_SET_SETTING"]
     if (setting == "CORRECT_PREDICTION_ONLY"):
@@ -560,11 +560,40 @@ def data_specific_explanations_more_complete(request):
                                        result["rules"][rule][class_]["percent_present"],
                                        result["rules"][rule][class_]["percent_correct"],
                                        result["rules"][rule][class_]["typicality"])
-    #print(data)
 
     # Also get typicality of simple concepts for each class.
     print("will compute more concepts")
+    list_concepts, l_struct, s_stat = query_all_concepts_scores(request.data)
+    for concept in list_concepts:
+        for consequent_name in list(set(l_struct["predicted_label"])):
+        
+            if not consequent_name in list(data.keys()):
+                data[consequent_name] = {}
+            if concept not in  list(data[consequent_name].keys()):
+                supp_ant_cons = len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name)])
+                percent_present = round(supp_ant_cons / len(l_struct), 3)
+                if supp_ant_cons== 0:
+                    percent_correct =0.0
+                else:
+                    percent_correct =round(len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name) & (l_struct["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
+                
+                supp_ant = len(l_struct.loc[(l_struct[concept] == 1) ])
+                supp_cons = len((l_struct["predicted_label"] == consequent_name))
+                if supp_ant != 0:
+                    confidence = round(supp_ant_cons / supp_ant , 3)
+                else:
+                    confidence = 0
+                if (supp_ant != 0) and (supp_cons != 0):
+                    lift = round(supp_ant_cons / (supp_ant * supp_cons) , 3)
+                else:
+                    lift = 0
+
+                
+                data[consequent_name][concept] = (percent_present, confidence, percent_present, percent_correct,\
+                    lift)
+    """
     list_concepts, l_s, l_struct, s_stat = query_all_concepts_scores(request.data)
+    print(l_s, l_struct, s_stat)
     for concept, a, b, c in zip(list_concepts, l_s, l_struct, s_stat):
         for consequent_info in l_s:
 
@@ -585,6 +614,7 @@ def data_specific_explanations_more_complete(request):
                 
                 data[consequent_info["consequent_name"]][concept] = (percent_present, confidence, percent_present, percent_correct,\
                     round(a["lift"], 3))
+    """
 
     # If typicality score not significant, write "nan"
 

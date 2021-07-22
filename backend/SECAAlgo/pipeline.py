@@ -969,7 +969,41 @@ def execute_basic_concept_score_pipeline(image_set_setting, return_setting="CONC
     return list_scores, structured_representation[["image_name", "true_label", "predicted_label", "filter_concepts", "classification_check"]], semantic_feature_stats_dict
 
 
+def execute_concept_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
+                                 max_antecedent_length=10, min_support_score=0.1,
+                                 min_lift_score=0.1, min_confidence_score=0.1,
+                                 filter_concepts="ALL", or_queries=[],
+                                 desired_classes=["ALL"], class_selection=["ALL"],
+                                 predicted_class=["ALL"], not_predicted_class=["ALL"],
+                                 or_exclude=[], or_not_query=[], exclude_concepts=[],
+                                 exclude_predicted_classes=[], exclude_true_classes=[],
+                                 only_true_class=["ALL"], only_predicted_class=["ALL"],
+                                 session_id=-1):
+    if image_set_setting not in VALID_IMAGE_SET_SETTINGS or return_setting not in VALID_RETURN_SETTINGS:
+        return {
+                   "Non-valid input for settings"
+               }, [], status.HTTP_400_BAD_REQUEST
 
+    if session_id < 0:
+        return {
+                   "Non-valid input for session id"
+               }, [], status.HTTP_400_BAD_REQUEST
+    # 1. Get subset of images
+    image_list, stat = retrieve_images(
+        image_set_setting, binary_task_classes, session_id)
+    #print(image_list)
+    #print(image_list)
+    if stat != status.HTTP_200_OK:
+        return image_list, stat
+
+
+    # 2. Make tabular representation with only these images
+    structured_representation, semantic_features = make_tabular_representation(
+        image_list, image_set_setting)
+    semantic_feature_stats_dict = compute_statistical_tests_custom(
+        structured_representation)
+    
+    return structured_representation, semantic_feature_stats_dict
 
 def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
                                  max_antecedent_length=10, min_support_score=0.1,
