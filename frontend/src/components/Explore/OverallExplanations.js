@@ -224,8 +224,9 @@ function OverallExplanations() {
             <RadioGroup onChange={(event) => setSorting(event.target.value)}>
                 <Radio value={"alphabetical"}>Alphabetical order</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
-                <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
-                <Radio value={"percentage_wrong"}>Percentage of wrong classification</Radio><br/>
+                <Radio value={"percent_present"}>Percentage of concept-associated images</Radio><br/>
+                <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
+                <Radio value={"percentage_wrong"}>Percentage of wrong predictions</Radio><br/>
             </RadioGroup>
         </div>
 

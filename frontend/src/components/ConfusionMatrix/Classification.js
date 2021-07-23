@@ -424,7 +424,8 @@ export default function Classification(props) {
                                 }}>
                                     <Radio value={"concept"}>Alphabetical order</Radio><br/>
                                     <Radio value={"typicality"}>Typicality</Radio><br/>
-                                    <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
+                                    <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
+                                    <Radio value={"percentage_present"}>Percentage of concept-associated images</Radio><br/>
                                 </RadioGroup>
                             </div>
                             <div className="sort">
@@ -531,7 +532,8 @@ export default function Classification(props) {
                                 }}>
                                     <Radio value={"concept"}>Alphabetical order</Radio><br/>
                                     <Radio value={"typicality"}>Typicality</Radio><br/>
-                                    <Radio value={"percentage_correct"}>Percentage of correct classification</Radio><br/>
+                                    <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
+                                    <Radio value={"percentage_present"}>Percentage of concept-associated images</Radio><br/>
                                 </RadioGroup>
                             </div>
                             <div className="sort">

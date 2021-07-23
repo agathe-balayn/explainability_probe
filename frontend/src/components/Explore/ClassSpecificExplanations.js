@@ -153,6 +153,9 @@ function ClassSpecificExplanations() {
                     if (rule_score === "correct_percentage") {
                         subText = "correct percentage: " + (parseFloat(table[key][sortedTable[rule]][3])*100).toFixed(2) + "%"
                     }
+                    if (rule_score === "confidence") {
+                        subText = "confidence: " + (parseFloat(table[key][sortedTable[rule]][1])*100).toFixed(2) + "%"
+                    }
 
                     ruleString.push({
                         view:
@@ -204,16 +207,18 @@ function ClassSpecificExplanations() {
                 update()
                 }
             }>
-                <Radio value={"typicality"}>Rule typicality</Radio><br/>
+                <Radio value={"confidence"}>Confidence</Radio><br/>
+                <Radio value={"typicality"}>Typicality</Radio><br/>
                 <Radio value={"present_percentage"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
                 <Radio value={"correct_percentage"}>Percentage of correctly classified images within rule-associated images</Radio><br/>
+
             </RadioGroup>
 
         </div>
 
         <div className="filters">
             <div className="subtitle"><h1>filter</h1></div>
-            <div className="slider">Support filter <Slider min={0} max={1} step={0.01} onChange={
+            <div className="slider">Percentage of concept-associated images among images with the predicted class (support) filter <Slider min={0} max={1} step={0.01} onChange={
                 (value) => {
                     setSupport(value);
                     update();
@@ -232,7 +237,6 @@ function ClassSpecificExplanations() {
 
             <RadioGroup onChange={(event) => setSorting(event.target.value)}>
                 <Radio value={"alphabetical"}>Alphabetical order</Radio><br/>
-                <Radio value={"support"}>Support</Radio><br/>
                 <Radio value={"confidence"}>Confidence</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
                 <Radio value={"present_percentage"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>

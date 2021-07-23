@@ -58,6 +58,23 @@ class QueryClassificationFormulas extends React.Component {
         let items = Object.keys(data).map(function(key) {
             return [key, data[key]];
         });
+        console.log("RULES")
+        console.log(data)
+        console.log(items)
+
+        // First flatten and then sort the flat array.
+        let flat_items = []
+        let new_idx = 0
+        for(let i = 0; i < items.length; i++){
+            for(let j = 0; j < items[i][1].length; j++){
+                flat_items.push([new_idx, [items[i][1][j]]]) 
+                new_idx ++
+            
+        }
+        }
+        console.log(flat_items)
+        items = flat_items
+
         items.sort(function(first, second) {
             let first2 = 0
             for(let i in first[1]){

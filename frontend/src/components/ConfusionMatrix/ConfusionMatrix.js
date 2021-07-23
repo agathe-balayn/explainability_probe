@@ -1,7 +1,8 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import "../../css/ConfusionMatrix.less"
+import "../../css/ConfusionMatrix.less";
+import {Row, Col, Collapse, Radio} from "antd";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {f1 as f1_url, matrix_data as matrix_data_url} from "../../API";
 
@@ -135,13 +136,14 @@ export default function ConfusionMatrix(props) {
             <div className={"table-label"}>
                 <p id={"vertical-label"}>{labels[1]}</p>
                 {/*td = the blank cell in the top left corner*/}
+                
                 <table className='Matrix-table'>
                     {/*F1 score above matrix*/}
                     {
                         <tr>
-                            <th className={"f1score"}><em>F1 Score</em></th>
+                            <td className={"f1score"} style={{"fontSize": "10x"}}><em>F1 Score</em></td>
                             {f1_scores.map(item => (
-                                <th className={"f1score"} scope="col" key={item}><em>{item}</em></th>
+                                <td className={"f1score"}  scope="col" key={item} style={{"fontSize": "10x"}}><em>{item}</em></td>
                             ))}
                         </tr>
                     }
@@ -224,6 +226,7 @@ export default function ConfusionMatrix(props) {
                         </tr>
                     ))}
                 </table>
+                
             </div>
         </div>
     );
