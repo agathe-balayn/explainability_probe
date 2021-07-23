@@ -26,9 +26,11 @@ class QueryClassificationFormulas extends React.Component {
      */
 
     sortRulesByFilter = (e) =>{
+        console.log("rules")
         this.setState({
             rule_typicality: this.sortRulesBy(this.state.rule_typicality, e)
         })
+        //this.render()
     }
 
     /**
@@ -37,9 +39,11 @@ class QueryClassificationFormulas extends React.Component {
      */
 
     sortConceptsByFilter = (e) =>{
+        console.log("concepts")
         this.setState({
             concept_typicality: this.sortConceptsBy(this.state.concept_typicality, e),
         })
+        //this.render()
     }
 
     /**
@@ -48,6 +52,7 @@ class QueryClassificationFormulas extends React.Component {
      * @param by parameter to sort by
      * @returns {{}} returns sorted array
      */
+
 
     sortRulesBy = (data, by) =>{
         let items = Object.keys(data).map(function(key) {
@@ -68,12 +73,13 @@ class QueryClassificationFormulas extends React.Component {
                     second2=second[1][i][by]
                 }
             }
-            return first2 - second2;
+            return  second2- first2;
         });
         let newData = {}
         for(let i = 0; i < items.length; i++){
-            newData[items[i][0]] = items[i][1]
+            newData[i] = items[i][1]
         }
+        
         return newData;
     }
 
@@ -84,20 +90,28 @@ class QueryClassificationFormulas extends React.Component {
      * @returns {{}} returns sorted array
      */
 
+
+
     sortConceptsBy = (data, by) => {
-        console.log(data)
-        console.log(by)
-        let items = Object.keys(data).map(function(key) {
-            return [key, data[key]];
-        });
-        items.sort(function(first, second) {
-            return first[1][by] - second[1][by];
-        });
+        
+
+
+        let item_sortable = []
+        for (var elem in data){
+
+            item_sortable.push([elem, data[elem]])
+        }
+        item_sortable.sort(function(a, b) {
+            return b[1][by] - a[1][by];
+        })
+
         let newData = {}
-        for(let i = 0; i < items.length; i++){
-            newData[items[i][0]] = items[i][1]
+        for(let i = 0; i < item_sortable.length; i++){
+            //newData[items[i][0]] = items[i][1]
+            newData[i] = item_sortable[i][1]
         }
         return newData;
+        
     }
 
     /**
@@ -432,6 +446,7 @@ class QueryClassificationFormulas extends React.Component {
     }
 
     render() {
+        console.log("render")
         let conceptList = []
         let confusionMatrix = []
 
@@ -637,6 +652,7 @@ class QueryClassificationFormulas extends React.Component {
                                 <Select id={"selectFilter"} dropdownMatchSelectWidth={false} onChange={this.sortConceptsByFilter}>
                                     <Option value={'typicality'}>Typicality</Option>
                                     <Option value={'percent_present'}>Percentage present</Option>
+                                    <Option value={'percent_correct'}>Percentage in correct predictions</Option>
                                 </Select>
                                 <hr/>
                                 <div>
@@ -661,6 +677,7 @@ class QueryClassificationFormulas extends React.Component {
                                 <Select id={"selectFilter"} dropdownMatchSelectWidth={false} onChange={this.sortRulesByFilter}>
                                     <Option value={'typicality'}>Typicality</Option>
                                     <Option value={'percent_present'}>Percentage present</Option>
+                                    <Option value={'percent_correct'}>Percentage in correct predictions</Option>
                                 </Select>
                                 <hr/>
                                 <div>
