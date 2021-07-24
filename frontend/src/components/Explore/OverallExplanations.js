@@ -8,10 +8,10 @@ const RadioGroup = Radio.Group;
 
 function OverallExplanations() {
   const size = 300;
-  const [image_setting, set_image_setting] = useState([""]);
+  const [image_setting, set_image_setting] = useState(["ALL_IMAGES"]);
   const [concept_data, set_concept_data] = useState({});
   const [table_data, set_table_data] = useState([]);
-  const [sorting, setSorting] = useState("alphabetical");
+  const [sorting, setSorting] = useState("typicality");
   const [session_id, setSession] = useState(JSON.parse(sessionStorage.getItem("session")))
   const [token, setToken] = useState(JSON.parse(sessionStorage.getItem("token")));
 
@@ -221,7 +221,7 @@ function OverallExplanations() {
       <div className="rightSide">
         <div className="sort">
             <div className="subtitle"><h1>order of representation</h1></div>
-            <RadioGroup onChange={(event) => setSorting(event.target.value)}>
+            <RadioGroup defaultValue="typicality" onChange={(event) => setSorting(event.target.value)}>
                 <Radio value={"alphabetical"}>Alphabetical order</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
                 <Radio value={"percent_present"}>Percentage of concept-associated images</Radio><br/>
@@ -236,7 +236,7 @@ function OverallExplanations() {
           </div>
           The set of images considered for the computation
           <br />
-          <RadioGroup onChange={userUpdatedSetting}>
+          <RadioGroup defaultValue="ALL_IMAGES" onChange={userUpdatedSetting}>
             <Radio value={"ALL_IMAGES"}>All images</Radio>
             <br />
             <Radio value={"CORRECT_PREDICTION_ONLY"}>
@@ -249,8 +249,9 @@ function OverallExplanations() {
             <br />
           </RadioGroup>
           <br />
+          <Button onClick={fetchData}>Search</Button>
         </div>
-        <Button onClick={fetchData}>Search</Button>
+        
       </div>
     </div>
   );

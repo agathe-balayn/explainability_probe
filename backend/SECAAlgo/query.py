@@ -33,6 +33,7 @@ def query_classes(input):
     :param input: the input from the POST request
     :return: a JSON string of the queried db elements
     """
+    print("query classes")
     to_filter = {}
     to_exclude = {}
     query_class = None
@@ -250,7 +251,7 @@ def simple_rule_search(input):
                                                             only_true_class=only_true_class,
                                                             only_predicted_class=only_predicted_class,
                                                             session_id=session_id)
-        print("got results", res, stat_rules, df_info)
+        #print("got results", res, stat_rules, df_info)
         return res, stat_rules, df_info
     except ValueError:
         return {
@@ -476,6 +477,8 @@ def query_all_concepts_scores(input):
             elif input[point] == "BINARY_MATRIX_VIEW":
                 image_setting = "BINARY_MATRIX_VIEW"
             continue
+        elif point == "RULE_SETTING":
+            rule_setting =input[point]
 
         elif point == "session_id":
             session_id = input[point]
@@ -537,7 +540,7 @@ def query_all_concepts_scores(input):
         else:
             mistake_found = True
             mistakes.append(point)
-
+    print("image setting", image_setting, input)
     if image_setting is None:
         image_setting = "BINARY_MATRIX_VIEW"
     if mistake_found:
@@ -609,7 +612,7 @@ def query_all_concepts_scores(input):
                                                                 exclude_true_classes=exclude_true_class,
                                                                 only_true_class=only_true_class,
                                                                 only_predicted_class=only_predicted_class,
-                                                                session_id=session_id)
+                                                                session_id=session_id, rule_setting=rule_setting)
 
     """
     for i in list_concepts:
@@ -689,7 +692,7 @@ def query_rules(input):
     :param input: The incoming data from a request in a JSON format, as a python dict
     :return: The filtered rules and concepts, along with a HTTP status for if it was successful or not.
     """
-
+    print("query rules")
     print("input", input)
 
     session_id = -1
@@ -846,7 +849,9 @@ def query_rules(input):
                                                             only_true_class=only_true_class,
                                                             only_predicted_class=only_predicted_class,
                                                             session_id=session_id, task_type=task_setting)
+        print(res)
         return res, stat
+
 
     # If there is a value error thrown, it will catch it. Currently there are no errors that would realistically occur
     # however, but if we find cases where we want to catch an error here we can add them below

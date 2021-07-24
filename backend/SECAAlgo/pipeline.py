@@ -90,10 +90,55 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
             filter_names.append(name)
 
     # This is the rule segmentation part
-
     antecedent_list = list(dm_rules["antecedents"])
     consequent_list = list(dm_rules["consequents"])
     lift_scores = list(dm_rules["lift"])
+
+
+
+    for index, row in dm_rules.iterrows():
+        name_set = row["antecedents"]
+        name = ""
+        for el in name_set:
+            if name == "":
+                name = el
+            else:
+                name = el + " AND " + name
+
+        if name not in rules.keys():
+            rules[name] = {}
+
+        consequent = list(row["consequents"])[0]
+        if consequent not in rules[name].keys():
+            rules[name][consequent] = {}
+
+
+            supp_ant_cons = len(semantic_feature_representation.loc[(semantic_feature_representation[name] == 1) & (semantic_feature_representation["predicted_label"] == consequent)])
+            percent_present = round(supp_ant_cons / len(semantic_feature_representation), 3)
+            if supp_ant_cons== 0:
+                percent_correct =0.0
+            else:
+                percent_correct =round(len(semantic_feature_representation.loc[(semantic_feature_representation[name] == 1) & (semantic_feature_representation["predicted_label"] == consequent) & (semantic_feature_representation["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
+                    
+            supp_ant = len(semantic_feature_representation.loc[(semantic_feature_representation[name] == 1) ])
+            supp_cons = len((semantic_feature_representation.loc[semantic_feature_representation["predicted_label"] == consequent]))
+            if supp_ant != 0:
+                confidence = round(supp_ant_cons / supp_ant , 3)
+            else:
+                confidence = 0
+            if (supp_ant != 0) and (supp_cons != 0):
+                lift = round(supp_ant_cons / (supp_ant * supp_cons) , 3)
+            else:
+                lift = 0
+            percent_present_antecedent = round(supp_ant_cons / supp_cons, 3)
+
+
+            rules[name][consequent]["percent_present"] = percent_present
+            rules[name][consequent]["percent_correct"] = percent_correct
+            rules[name][consequent]["typicality"] = lift
+            rules[name][consequent]["percent_present_antecedent"] = percent_present_antecedent
+
+    """
     for i in range(len(dm_rules["antecedents"])):
         name_set = antecedent_list[i]
         name = ""
@@ -103,14 +148,16 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
             else:
                 name = el + " AND " + name
 
-        dict = {}
+        dict_rule = {}
         current_rule_info = {}
 
         # try to get the already existing set of info in this dict, and if it does not exist you initialize it
         try:
-            dict = rules[name]
+            dict_rule = rules[name]
         except:
-            rules[name] = dict
+            rules[name] = dict_rule
+
+        
 
         # This is the most useless loop of all time but its a frozenset, so we must iterate through it with a loop.
         # This is supposed to be a list with a single element in it. We look for the semantic feature representation
@@ -156,18 +203,22 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
                     num_correct += 1
 
             if len(current_rule_info) > 0:
+                print("current_rule_info")
                 current_rule_info["percent_present"] = len(current_rule_info) \
                                                        / len(semantic_feature_representation["image_name"])
                 current_rule_info["percent_correct"] = num_correct / \
-                                                       (len(current_rule_info) - 1)
+                                                       (len(current_rule_info) )
                 current_rule_info["typicality"] = lift_scores[i]
+                current_rule_info["percent_present_antecedent"] =  len(current_rule_info) / len(semantic_feature_representation.loc[semantic_feature_representation["predicted_label"] == consequent])
 
             # If there is nothing in this part of the dict, there is no relevant info so we remove it
             else:
                 del dict[consequent]
 
+
         if len(rules[name]) < 1:
             del rules[name]
+    """
 
     # adds all columns that were in the semantic feature representation
     for col in semantic_feature_representation.columns:
@@ -978,7 +1029,7 @@ def execute_concept_mining_pipeline(image_set_setting, return_setting="CONCEPTS_
                                  or_exclude=[], or_not_query=[], exclude_concepts=[],
                                  exclude_predicted_classes=[], exclude_true_classes=[],
                                  only_true_class=["ALL"], only_predicted_class=["ALL"],
-                                 session_id=-1):
+                                 session_id=-1, rule_setting="R_MINING"):
     if image_set_setting not in VALID_IMAGE_SET_SETTINGS or return_setting not in VALID_RETURN_SETTINGS:
         return {
                    "Non-valid input for settings"
@@ -1000,10 +1051,59 @@ def execute_concept_mining_pipeline(image_set_setting, return_setting="CONCEPTS_
     # 2. Make tabular representation with only these images
     structured_representation, semantic_features = make_tabular_representation(
         image_list, image_set_setting)
-    semantic_feature_stats_dict = compute_statistical_tests_custom(
+
+
+    if rule_setting == "STATS_S":
+        semantic_features_dict_list =[]
+        for label in list(set(structured_representation["true_label"])):
+            transf_data = structured_representation.copy()
+            transf_data["predicted_label"] = transf_data["predicted_label"].apply(lambda x: "others" if x != label else label)
+            semantic_features_dict_list.append(compute_statistical_tests_custom(transf_data))
+
+
+    elif rule_setting == "R_MINING":
+        semantic_feature_stats_dict = compute_statistical_tests_custom(
         structured_representation)
+
+    if rule_setting == "STATS_S":
+        print("compute....")
+        return getScoresForOneVsALL(semantic_features_dict_list, structured_representation), []
+    elif rule_setting == "R_MINING":
     
-    return structured_representation, semantic_feature_stats_dict
+        return structured_representation, semantic_feature_stats_dict
+
+
+def getScoresForOneVsALL(semantic_features_dict_list, structured_representation_rule_mining):
+    print("scores")
+    data = {}
+    for class_ in list(set(structured_representation_rule_mining["true_label"])):
+        data[class_] = {}
+
+    for class_name, class_ in zip(list(set(structured_representation_rule_mining["true_label"])), semantic_features_dict_list):
+        for concept in class_.keys():
+
+            supp_ant_cons = len(structured_representation_rule_mining.loc[(structured_representation_rule_mining[concept] == 1) & (structured_representation_rule_mining["predicted_label"] == class_name)])
+            percent_present = round(supp_ant_cons / len(structured_representation_rule_mining), 3)
+            if supp_ant_cons== 0:
+                percent_correct =0.0
+            else:
+                percent_correct =round(len(structured_representation_rule_mining.loc[(structured_representation_rule_mining[concept] == 1) & (structured_representation_rule_mining["predicted_label"] == class_name) & (structured_representation_rule_mining["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
+                
+            supp_ant = len(structured_representation_rule_mining.loc[(structured_representation_rule_mining[concept] == 1) ])
+            supp_cons = len((structured_representation_rule_mining.loc[structured_representation_rule_mining["predicted_label"] == class_name]))
+            if supp_ant != 0:
+                confidence = round(supp_ant_cons / supp_ant , 3)
+            else:
+                confidence = 0
+
+            percent_present_antecedent = supp_ant_cons / supp_cons
+
+            #data[class_name][concept] = 2
+            #data[class_name][concept] = (percent_present, confidence, percent_present, percent_correct)
+            data[class_name][concept] = (percent_present, confidence, percent_present, percent_correct, class_[concept]["cramers_value"], percent_present_antecedent)
+    return data
+
+
 
 def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND_RULES", binary_task_classes=None,
                                  max_antecedent_length=10, min_support_score=0.1,
@@ -1014,7 +1114,7 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
                                  or_exclude=[], or_not_query=[], exclude_concepts=[],
                                  exclude_predicted_classes=[], exclude_true_classes=[],
                                  only_true_class=["ALL"], only_predicted_class=["ALL"],
-                                 session_id=-1, task_type="binary"):
+                                 session_id=-1, task_type="binary", rule_setting="R_MINING"):
     """
     A master method to execute the entire rule mining pipeline in one go. It takes in the following input parameters and
     runs rule mining on all the images which are in the database, using that session id, and only on the images which
@@ -1152,11 +1252,20 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
         rep_old, semantic_features, antecendets_from_rule_mining)
 
     # 5. Run compute_statistical_tests with rule mining tabular representation
-    semantic_feature_stats_dict = compute_statistical_tests_custom(
-        structured_representation_rule_mining)
 
-    if return_setting == "CONCEPTS_ONLY":  # if the user only wants the concept data
-        return semantic_feature_stats_dict, [], status.HTTP_200_OK
+    if rule_setting == "STATS_S":
+        semantic_features_dict_list =[]
+        for label in list(set(structured_representation_rule_mining["true_label"])):
+            transf_data = structured_representation_rule_mining.copy()
+            transf_data["predicted_label"] = transf_data["predicted_label"].apply(lambda x: "others" if x != label else label)
+            semantic_features_dict_list.append(compute_statistical_tests_custom(transf_data))
+
+    elif rule_setting == "R_MINING":
+        semantic_feature_stats_dict = compute_statistical_tests_custom(
+            structured_representation_rule_mining)
+
+        if return_setting == "CONCEPTS_ONLY":  # if the user only wants the concept data
+            return semantic_feature_stats_dict, [], status.HTTP_200_OK
 
     # 6. Compute the % values for the rules/concepts
     # Combines the concepts and the rule sets together so the concept and rule classifications can take them as a nice,
@@ -1184,21 +1293,25 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     if task_type == "4task":
         structured_representation["true_label"] = "correctly predicted " + structured_representation["true_label"]
 
-    concept_and_rule_classifications = get_concept_and_rule_classifications(structured_representation_rule_mining,
-                                                                            semantic_feature_stats_dict,
-                                                                            data_mining_rules,
-                                                                            filter_concepts=filter_single_concepts,
-                                                                            desired_classes=desired_classes,
-                                                                            class_selection=class_selection,
-                                                                            predicted_class=predicted_class,
-                                                                            not_predicted_class=not_predicted_class,
-                                                                            exclude_predicted_classes=exclude_predicted_classes,
-                                                                            exclude_true_classes=exclude_true_classes,
-                                                                            only_true_class=only_true_class,
-                                                                            only_predicted_class=only_predicted_class)
+    if rule_setting == "STATS_S":
+        print("compute....")
+        return getScoresForOneVsALL(semantic_features_dict_list, structured_representation_rule_mining), [], []
+    elif rule_setting == "R_MINING":
+        concept_and_rule_classifications = get_concept_and_rule_classifications(structured_representation_rule_mining,
+                                                                                semantic_feature_stats_dict,
+                                                                                data_mining_rules,
+                                                                                filter_concepts=filter_single_concepts,
+                                                                                desired_classes=desired_classes,
+                                                                                class_selection=class_selection,
+                                                                                predicted_class=predicted_class,
+                                                                                not_predicted_class=not_predicted_class,
+                                                                                exclude_predicted_classes=exclude_predicted_classes,
+                                                                                exclude_true_classes=exclude_true_classes,
+                                                                                only_true_class=only_true_class,
+                                                                                only_predicted_class=only_predicted_class)
 
-    # 7. Return everything
-    return concept_and_rule_classifications, supp_conf, status.HTTP_200_OK
+        # 7. Return everything
+        return concept_and_rule_classifications, supp_conf, status.HTTP_200_OK
 
 def string_concept_name(concept_name):
   

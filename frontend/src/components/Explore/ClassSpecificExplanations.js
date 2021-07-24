@@ -11,9 +11,11 @@ function ClassSpecificExplanations() {
 //    var rules = []
 //    var supp_conf = []
     const [table, setTable] = useState({});
-    const [image_setting, set_image_setting] = useState([""]);
+    const [image_setting, set_image_setting] = useState("ALL_IMAGES");
+    const [rule_computation, set_rule_computation] = useState("R_MINING");
+
     const [rule_score, set_rule_score] = useState("typicality");
-    const [sorting, setSorting] = useState("alphabetical");
+    const [sorting, setSorting] = useState("typicality");
     const [session_id, setSession] = useState(JSON.parse(sessionStorage.getItem("session")))
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
@@ -22,7 +24,7 @@ function ClassSpecificExplanations() {
         const errorDiv = document.getElementsByClassName("errors")[0]
         axios
           .post(data_specific_explanations_url,
-          JSON.stringify({ IMAGE_SET_SETTING: image_setting, "session_id" : session_id }), {
+          JSON.stringify({ "IMAGE_SET_SETTING": image_setting, "session_id" : session_id, "RULE_SETTING": rule_computation }), {
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Token " + token,
@@ -45,7 +47,7 @@ function ClassSpecificExplanations() {
           // Run a second time with more complete explanations.
           axios
           .post(data_specific_explanations_more_complete_url,
-          JSON.stringify({ IMAGE_SET_SETTING: image_setting, "session_id" : session_id }), {
+          JSON.stringify({ IMAGE_SET_SETTING: image_setting, "session_id" : session_id, "RULE_SETTING": rule_computation }), {
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Token " + token,
@@ -112,6 +114,9 @@ function ClassSpecificExplanations() {
         else if (on === "typicality") {
             index = 4
         }
+        else if (on === "present_percentage_antecedent") {
+            index = 5
+        }
 
         const orderedKeys = []
 
@@ -133,6 +138,21 @@ function ClassSpecificExplanations() {
         }
         return orderedKeys
     }
+
+    /*
+    <Button onClick={displayRuleButton(key)}>{key}</Button>
+    function displayRuleButton(class_name) {
+        console.log("classDiv_" +class_name)
+      var x = document.getElementById("classDiv_" +class_name); //{"classDiv_" + key}
+      console.log(x)
+      if (x !== null){
+      if (x.style.display == "none") {
+        x.style.display = "block";
+      } else {
+        x.style.display = "none";
+      }
+      }
+    }*/
     function update() {
 
         const arr = []
@@ -156,6 +176,9 @@ function ClassSpecificExplanations() {
                     if (rule_score === "confidence") {
                         subText = "confidence: " + (parseFloat(table[key][sortedTable[rule]][1])*100).toFixed(2) + "%"
                     }
+                    if (rule_score === "present_percentage_antecedent") {
+                        subText = "percentage among images of the class: " + (parseFloat(table[key][sortedTable[rule]][5])*100).toFixed(2) + "%"
+                    }
 
                     ruleString.push({
                         view:
@@ -170,15 +193,17 @@ function ClassSpecificExplanations() {
             }
             arr.push({section:
                 <div className={"tableEntry"}>
+                
                     <h3>{key}</h3>
-
-                    <div className={"ruleList"}>
+                    
+                    <div className={"ruleList"} id={"classDiv_" + key}>
                         {ruleString.map(item => (
                         <>
                            {item.view}
                         </>
                         ))}
                     </div>
+                    
                 </div>
             })
 
@@ -188,6 +213,10 @@ function ClassSpecificExplanations() {
     const userUpdatedSetting = (event) => {
         set_image_setting(event.target.value);
     };
+    const userUpdatedComputation = (event) => {
+        set_rule_computation(event.target.value);
+    };
+
     return (
     <div>
       <div className="errors">
@@ -201,7 +230,7 @@ function ClassSpecificExplanations() {
         <div className="scores">
             <div className="subtitle"><h1>scores</h1></div>
 
-            <RadioGroup onChange={(event) => {
+            <RadioGroup defaultValue="typicality" onChange={(event) => {
                 set_rule_score(event.target.value);
 
                 update()
@@ -209,7 +238,8 @@ function ClassSpecificExplanations() {
             }>
                 <Radio value={"confidence"}>Confidence</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
-                <Radio value={"present_percentage"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
+                <Radio value={"present_percentage"}>Percentage of rule-associated images among dataset</Radio><br/>
+                <Radio value={"present_percentage_antecedent"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
                 <Radio value={"correct_percentage"}>Percentage of correctly classified images within rule-associated images</Radio><br/>
 
             </RadioGroup>
@@ -235,11 +265,12 @@ function ClassSpecificExplanations() {
             <div className="subtitle"><h1>order of representation</h1></div>
 
 
-            <RadioGroup onChange={(event) => setSorting(event.target.value)}>
+            <RadioGroup defaultValue="typicality" onChange={(event) => setSorting(event.target.value)}>
                 <Radio value={"alphabetical"}>Alphabetical order</Radio><br/>
                 <Radio value={"confidence"}>Confidence</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
-                <Radio value={"present_percentage"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
+                <Radio value={"present_percentage"}>Percentage of rule-associated images among idataset</Radio><br/>
+                <Radio value={"present_percentage_antecedent"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
                 <Radio value={"correct_percentage"}>Percentage of correctly classified images within rule-associated images</Radio><br/>
             </RadioGroup>
         </div>
@@ -247,15 +278,21 @@ function ClassSpecificExplanations() {
         <div className="settings">
             <div className="subtitle"><h1>settings</h1></div>
             The set of images considered for the computation<br/>
-            <RadioGroup onChange={userUpdatedSetting}>
+            <RadioGroup defaultValue="ALL_IMAGES" onChange={userUpdatedSetting}>
                 <Radio value={"ALL_IMAGES"}>All images</Radio><br/>
                 <Radio value={"CORRECT_PREDICTION_ONLY"}>Only images with correct predictions</Radio><br/>
                 <Radio value={"WRONG_PREDICTION_ONLY"}>Only images with incorrect predictions</Radio><br/>
             </RadioGroup>
             <br/>
-
+            Compute typicality based on: <br/>
+            <RadioGroup defaultValue="R_MINING" onChange={userUpdatedComputation}>
+                <Radio value={"R_MINING"}>Rule mining</Radio><br/>
+                <Radio value={"STATS_S"}>Statistical scores (one predicted label versus all the others)</Radio><br/>
+            </RadioGroup>
+            <br/>
+            <Button onClick={fetchData}>Search</Button>
         </div>
-        <Button onClick={fetchData}>Search</Button>
+        
       </div>
     </div>
   );

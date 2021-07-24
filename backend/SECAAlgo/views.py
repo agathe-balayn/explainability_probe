@@ -460,7 +460,9 @@ def query_all(self):
                  key named 'query_type' with either 'rules' or 'classes' as its value.
     :return: A Response object with the information from the query, and its appropriate status code.
     """
+    print("query all...")
     res, code = universal_query(self.data)
+    print(res)
     return Response(res, status=code)
 
 
@@ -480,39 +482,45 @@ def data_specific_explanations(request):
     print(request.data)
     session_id = request.data['session_id']
     setting = request.data["IMAGE_SET_SETTING"]
+    rule_setting = request.data["RULE_SETTING"]
+    print("RUL E SETT", rule_setting)
     if (setting == "CORRECT_PREDICTION_ONLY"):
         result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY",
-                                                                 session_id=session_id)
+                                                                 session_id=session_id, rule_setting=rule_setting)
     elif (setting == "ALL_IMAGES"):
         result, supp_conf, unused = execute_rule_mining_pipeline(
-            image_set_setting="ALL_IMAGES", session_id=session_id)
+            image_set_setting="ALL_IMAGES", session_id=session_id, rule_setting=rule_setting)
     else:
         result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY",
-                                                                 session_id=session_id)
-    rules = {}
-    for rule in result["rules"]:
+                                                                 session_id=session_id, rule_setting=rule_setting)
+    
+    if rule_setting == "STATS_S":
+        return Response({"data":  result})
+    elif rule_setting == "R_MINING":
+        rules = {}
+        for rule in result["rules"]:
 
-        for key in supp_conf:
-            if key[0] == rule:
-                rules[rule] = (key[1], key[2])
-                break
-    data = {}
-    for rule in result["rules"]:
-        for class_ in result["rules"][rule]:
-            if not class_ in data:
-                data[class_] = {}
+            for key in supp_conf:
+                if key[0] == rule:
+                    rules[rule] = (key[1], key[2])
+                    break
+        data = {}
+        for rule in result["rules"]:
+            for class_ in result["rules"][rule]:
+                if not class_ in data:
+                    data[class_] = {}
 
-            for i in rules:
-                if rule == i:
-                    data[class_][i] = (rules[i][0],
-                                       rules[i][1],
-                                       result["rules"][rule][class_]["percent_present"],
-                                       result["rules"][rule][class_]["percent_correct"],
-                                       result["rules"][rule][class_]["typicality"])
+                for i in rules:
+                    if rule == i:
+                        data[class_][i] = (result["rules"][rule][class_]["percent_present"],
+                                           rules[i][1],
+                                           result["rules"][rule][class_]["percent_present"],
+                                           result["rules"][rule][class_]["percent_correct"],
+                                           result["rules"][rule][class_]["typicality"],
+                                           result["rules"][rule][class_]["percent_present_antecedent"])
     #print(data)
 
     # If typicality score not significant, write "nan"
-
     return Response({"data": data})
 
 
@@ -531,66 +539,90 @@ def data_specific_explanations_more_complete(request):
     print("data_specific_explanations_more_complete", request.data)
     session_id = request.data['session_id']
     setting = request.data["IMAGE_SET_SETTING"]
+    rule_setting = request.data["RULE_SETTING"]
+
     if (setting == "CORRECT_PREDICTION_ONLY"):
         result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY",
-                                                                 session_id=session_id)
+                                                                 session_id=session_id, rule_setting=rule_setting)
     elif (setting == "ALL_IMAGES"):
         result, supp_conf, unused = execute_rule_mining_pipeline(
-            image_set_setting="ALL_IMAGES", session_id=session_id)
+            image_set_setting="ALL_IMAGES", session_id=session_id, rule_setting=rule_setting)
     else:
         result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY",
-                                                                 session_id=session_id)
-    rules = {}
-    for rule in result["rules"]:
+                                                                 session_id=session_id, rule_setting=rule_setting)
+    
+    if rule_setting == "STATS_S":
+        data = result
+    elif rule_setting == "R_MINING":
+        rules = {}
+        for rule in result["rules"]:
 
-        for key in supp_conf:
-            if key[0] == rule:
-                rules[rule] = (key[1], key[2])
-                break
-    data = {}
-    for rule in result["rules"]:
-        for class_ in result["rules"][rule]:
-            if not class_ in data:
-                data[class_] = {}
+            for key in supp_conf:
+                if key[0] == rule:
+                    rules[rule] = (key[1], key[2])
+                    break
+        data = {}
+        for rule in result["rules"]:
+            for class_ in result["rules"][rule]:
+                if not class_ in data:
+                    data[class_] = {}
 
-            for i in rules:
-                if rule == i:
-                    data[class_][i] = (rules[i][0],
-                                       rules[i][1],
-                                       result["rules"][rule][class_]["percent_present"],
-                                       result["rules"][rule][class_]["percent_correct"],
-                                       result["rules"][rule][class_]["typicality"])
+                for i in rules:
+                    if rule == i:
+                        data[class_][i] = (result["rules"][rule][class_]["percent_present"],
+                                           rules[i][1],
+                                           result["rules"][rule][class_]["percent_present"],
+                                           result["rules"][rule][class_]["percent_correct"],
+                                           result["rules"][rule][class_]["typicality"],
+                                           result["rules"][rule][class_]["percent_present_antecedent"])
 
-    # Also get typicality of simple concepts for each class.
     print("will compute more concepts")
     list_concepts, l_struct, s_stat = query_all_concepts_scores(request.data)
-    for concept in list_concepts:
-        for consequent_name in list(set(l_struct["predicted_label"])):
-        
-            if not consequent_name in list(data.keys()):
-                data[consequent_name] = {}
-            if concept not in  list(data[consequent_name].keys()):
-                supp_ant_cons = len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name)])
-                percent_present = round(supp_ant_cons / len(l_struct), 3)
-                if supp_ant_cons== 0:
-                    percent_correct =0.0
-                else:
-                    percent_correct =round(len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name) & (l_struct["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
-                
-                supp_ant = len(l_struct.loc[(l_struct[concept] == 1) ])
-                supp_cons = len((l_struct["predicted_label"] == consequent_name))
-                if supp_ant != 0:
-                    confidence = round(supp_ant_cons / supp_ant , 3)
-                else:
-                    confidence = 0
-                if (supp_ant != 0) and (supp_cons != 0):
-                    lift = round(supp_ant_cons / (supp_ant * supp_cons) , 3)
-                else:
-                    lift = 0
+    if rule_setting == "STATS_S":
+        # Merge previous data and new ones.
+        for class_ in l_struct:
+            if class_ not in data.keys():
+                data[class_] = {}
+            for concept in l_struct[class_]:
+                if concept not in data[class_].keys():
+                    data[class_][concept] = l_struct[class_][concept]
 
-                
-                data[consequent_name][concept] = (percent_present, confidence, percent_present, percent_correct,\
-                    lift)
+
+        
+    elif rule_setting == "R_MINING":
+        
+        # Also get typicality of simple concepts for each class.
+        
+        for concept in list_concepts:
+
+            for consequent_name in list(set(l_struct["predicted_label"])):
+            
+                if not consequent_name in list(data.keys()):
+                    data[consequent_name] = {}
+                if concept not in  list(data[consequent_name].keys()):
+                    supp_ant_cons = len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name)])
+                    percent_present = round(supp_ant_cons / len(l_struct), 3)
+                    if supp_ant_cons== 0:
+                        percent_correct =0.0
+                    else:
+                        percent_correct =round(len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name) & (l_struct["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
+                    
+                    supp_ant = len(l_struct.loc[(l_struct[concept] == 1) ])
+                    supp_cons = len((l_struct.loc[l_struct["predicted_label"] == consequent_name]))
+                    if supp_ant != 0:
+                        confidence = round(supp_ant_cons / supp_ant , 3)
+                    else:
+                        confidence = 0
+                    if (supp_ant != 0) and (supp_cons != 0):
+                        lift = round(supp_ant_cons / (supp_ant * supp_cons) , 3)
+                    else:
+                        lift = 0
+                    percent_present_antecedent = round(supp_ant_cons / supp_cons, 3)
+
+                    
+                    data[consequent_name][concept] = (percent_present, confidence, percent_present, percent_correct,\
+                        lift, percent_present_antecedent)
+        
     """
     list_concepts, l_s, l_struct, s_stat = query_all_concepts_scores(request.data)
     print(l_s, l_struct, s_stat)

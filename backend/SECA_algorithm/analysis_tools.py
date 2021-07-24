@@ -666,7 +666,7 @@ def get_rules(semantic_feature_representation,
 
     if need_subset:
         rules_temp = rules.copy()
-        while len(rules_temp) > 1000:
+        while len(rules_temp) > 2000:
             print(len(rules_temp))
             min_confidence_score += 0.1
             min_lift_score += 0.1
@@ -683,7 +683,7 @@ def get_rules(semantic_feature_representation,
             rules_temp_temp = rules_temp.copy()
             min_confidence_score = min_confidence_score - 0.1
             min_lift_score = min_lift_score - 0.1
-            while len(rules_temp) > 1000:
+            while len(rules_temp) > 2000:
                 print("hhh", len(rules_temp))
                 min_confidence_score += 0.005
                 min_lift_score += 0.005
@@ -699,11 +699,11 @@ def get_rules(semantic_feature_representation,
             del rules_temp, rules_temp_temp
 
             if len(list(list_consequents)) <= 2:
-                if len(rules) > 100:
-                    rules = rules.nlargest(100,'support')
+                if len(rules) > 500:
+                    rules = rules.nlargest(500,'support')
             else:
-                if len(rules) > 1000:
-                    rules = rules.nlargest(1000,'support')
+                if len(rules) > 2000:
+                    rules = rules.nlargest(2000,'support')
             print("final", len(rules))
 
         else:
