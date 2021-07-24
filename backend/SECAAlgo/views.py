@@ -9,7 +9,7 @@ from .seca_helper_methods import get_tabular_representation, get_tabular_represe
     save_csv_predictions, link_annotations, compute_statistical_tests_custom
 from .pipeline import execute_rule_mining_pipeline, post_process_concepts_rules
 from .query import query_rules, query_classes, universal_query, query_images, simple_rule_search, query_score_concepts, query_all_concepts_scores
-from .models import Sessions, Images, Notes
+from .models import Sessions, Images, Notes, ExplanationSet
 from django.core.exceptions import FieldError
 from django.views.generic import View
 from UserSECA.models import SECAUser
@@ -461,9 +461,24 @@ def query_all(self):
     :return: A Response object with the information from the query, and its appropriate status code.
     """
     print("query all...")
-    res, code = universal_query(self.data)
-    print(res)
-    return Response(res, status=code)
+    print(self.data)
+
+
+
+    session = Sessions.objects.filter(id=self.data["session_id"])[0]
+    exp = session.explanations.filter(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1])
+    print(exp)
+    if len(exp) > 0:
+        print("data already collected")
+        data = exp.last()
+        return Response(data.explanation_list, status=status.HTTP_200_OK)
+    else:
+        res, code = universal_query(self.data)
+        print(res)
+        exp = ExplanationSet(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1], explanation_list=res)
+        exp.save()
+        session.explanations.add(exp)
+        return Response(res, status=code)
 
 
 # These are the views used in the Explore tab
@@ -479,49 +494,113 @@ def data_specific_explanations(request):
                     retrieve.
     :return: A response object with the specific explanation's data
     """
-    print(request.data)
     session_id = request.data['session_id']
     setting = request.data["IMAGE_SET_SETTING"]
     rule_setting = request.data["RULE_SETTING"]
-    print("RUL E SETT", rule_setting)
-    if (setting == "CORRECT_PREDICTION_ONLY"):
-        result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY",
-                                                                 session_id=session_id, rule_setting=rule_setting)
-    elif (setting == "ALL_IMAGES"):
-        result, supp_conf, unused = execute_rule_mining_pipeline(
-            image_set_setting="ALL_IMAGES", session_id=session_id, rule_setting=rule_setting)
+
+    session = Sessions.objects.filter(id=session_id)[0]
+    #set_explanations = session.explanations.all()
+    exp = session.explanations.filter(type_explanation="rules", image_setting=setting, task_setting=rule_setting)
+    if len(exp) > 0:
+        print("data already collected")
+        data = exp.last()
+        print(data.explanation_list)
+        return Response({"data": data.explanation_list})
     else:
-        result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY",
-                                                                 session_id=session_id, rule_setting=rule_setting)
-    
-    if rule_setting == "STATS_S":
-        return Response({"data":  result})
-    elif rule_setting == "R_MINING":
-        rules = {}
-        for rule in result["rules"]:
+        print("collect data")
+        if (setting == "CORRECT_PREDICTION_ONLY"):
+            result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY",
+                                                                     session_id=session_id, rule_setting=rule_setting)
+        elif (setting == "ALL_IMAGES"):
+            result, supp_conf, unused = execute_rule_mining_pipeline(
+                image_set_setting="ALL_IMAGES", session_id=session_id, rule_setting=rule_setting)
+        else:
+            result, supp_conf, unused = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY",
+                                                                     session_id=session_id, rule_setting=rule_setting)
+        
+        if rule_setting == "R_MINING":
+            rules = {}
+            for rule in result["rules"]:
 
-            for key in supp_conf:
-                if key[0] == rule:
-                    rules[rule] = (key[1], key[2])
-                    break
-        data = {}
-        for rule in result["rules"]:
-            for class_ in result["rules"][rule]:
-                if not class_ in data:
+                for key in supp_conf:
+                    if key[0] == rule:
+                        rules[rule] = (key[1], key[2])
+                        break
+            data = {}
+            for rule in result["rules"]:
+                for class_ in result["rules"][rule]:
+                    if not class_ in data:
+                        data[class_] = {}
+
+                    for i in rules:
+                        if rule == i:
+                            data[class_][i] = (result["rules"][rule][class_]["percent_present"],
+                                               rules[i][1],
+                                               result["rules"][rule][class_]["percent_present"],
+                                               result["rules"][rule][class_]["percent_correct"],
+                                               result["rules"][rule][class_]["typicality"],
+                                               result["rules"][rule][class_]["percent_present_antecedent"])
+        #print(data)
+        print("will compute more concepts")
+        list_concepts, l_struct, s_stat = query_all_concepts_scores(request.data)
+        if rule_setting == "STATS_S":
+            # Merge previous data and new ones.
+            for class_ in l_struct:
+                if class_ not in data.keys():
                     data[class_] = {}
+                for concept in l_struct[class_]:
+                    if concept not in data[class_].keys():
+                        data[class_][concept] = l_struct[class_][concept]
 
-                for i in rules:
-                    if rule == i:
-                        data[class_][i] = (result["rules"][rule][class_]["percent_present"],
-                                           rules[i][1],
-                                           result["rules"][rule][class_]["percent_present"],
-                                           result["rules"][rule][class_]["percent_correct"],
-                                           result["rules"][rule][class_]["typicality"],
-                                           result["rules"][rule][class_]["percent_present_antecedent"])
-    #print(data)
 
-    # If typicality score not significant, write "nan"
-    return Response({"data": data})
+            
+        elif rule_setting == "R_MINING":
+            
+            # Also get typicality of simple concepts for each class.
+            
+            for concept in list_concepts:
+
+                for consequent_name in list(set(l_struct["predicted_label"])):
+                
+                    if not consequent_name in list(data.keys()):
+                        data[consequent_name] = {}
+                    if concept not in  list(data[consequent_name].keys()):
+                        supp_ant_cons = len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name)])
+                        percent_present = round(supp_ant_cons / len(l_struct), 3)
+                        if supp_ant_cons== 0:
+                            percent_correct =0.0
+                        else:
+                            percent_correct =round(len(l_struct.loc[(l_struct[concept] == 1) & (l_struct["predicted_label"] == consequent_name) & (l_struct["classification_check"] == "Correctly classified")])/ supp_ant_cons, 3)
+                        
+                        supp_ant = len(l_struct.loc[(l_struct[concept] == 1) ])
+                        supp_cons = len((l_struct.loc[l_struct["predicted_label"] == consequent_name]))
+                        if supp_ant != 0:
+                            confidence = round(supp_ant_cons / supp_ant , 3)
+                        else:
+                            confidence = 0
+                        if (supp_ant != 0) and (supp_cons != 0):
+                            lift = round(supp_ant_cons / (supp_ant * supp_cons) , 3)
+                        else:
+                            lift = 0
+                        percent_present_antecedent = round(supp_ant_cons / supp_cons, 3)
+
+                        
+                        data[consequent_name][concept] = (percent_present, confidence, percent_present, percent_correct,\
+                            lift, percent_present_antecedent)
+
+        # If typicality score not significant, write "nan"
+
+        # Save to db.
+        print("session id", session_id)
+        #exp = ExplanationSet(type_explanation="rules", image_setting=setting, task_setting=rule_setting, classA="", classB="")
+        #print(exp.type_explanation, exp.explanation_list)
+        exp = ExplanationSet(type_explanation="rules", image_setting=setting, task_setting=rule_setting, classA="", classB="", explanation_list=data)
+        exp.save()
+        session = Sessions.objects.filter(id=session_id)[0]
+        session.explanations.add(exp)#ExplanationSet.objects.filter(type_explanation="rules", image_setting=setting, task_setting=rule_setting, classA="", classB="")[-1])
+        exp1 = session.explanations.all()[0]
+        
+        return Response({"data": data})
 
 
 @api_view(['post'])
@@ -666,15 +745,27 @@ def data_overall_explanations(request):
     :return: A Response object with a dict containing the key 'result', and value of all the information retrieved from
              running the rule mining pipeline for the specified session
     """
+    print(request.data)
     setting = request.data["IMAGE_SET_SETTING"]
     session_id = request.data["session_id"]
     print("we are here")
+    session = Sessions.objects.filter(id=session_id)[0]
+    exp = session.explanations.filter(type_explanation="concepts", image_setting=setting, task_setting="all", classA="", classB="")
+    if len(exp) > 0:
+        print("data already collected")
+        data = exp.last()
+        return Response({"result": data.explanation_list})
+
     if (setting == "CORRECT_PREDICTION_ONLY"):
         result = execute_rule_mining_pipeline(image_set_setting="CORRECT_PREDICTION_ONLY", session_id=session_id)[0]
     elif (setting == "ALL_IMAGES"):
         result = execute_rule_mining_pipeline(image_set_setting="ALL_IMAGES", session_id=session_id)[0]
     else:
         result = execute_rule_mining_pipeline(image_set_setting="WRONG_PREDICTION_ONLY", session_id=session_id)[0]
+    exp = ExplanationSet(type_explanation="concepts", image_setting=setting, task_setting="all", classA="", classB="", explanation_list=result)
+    exp.save()
+    session = Sessions.objects.filter(id=session_id)[0]
+    session.explanations.add(exp)#ExplanationSet.objects.filter(type_explanation="rules", image_setting=setting, task_setting=rule_setting, classA="", classB="")[-1])
     return Response({"result": result})
 
 

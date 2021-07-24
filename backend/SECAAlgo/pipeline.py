@@ -221,10 +221,23 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
     """
 
     # adds all columns that were in the semantic feature representation
+
+    print("conceots now")
     for col in semantic_feature_representation.columns:
         if col == "image_name" or col == "true_label" or col == "predicted_label" or col == "classification_check":
             continue
 
+        supp_ant = len(semantic_feature_representation.loc[(semantic_feature_representation[col] == 1) ])
+        percent_present =  round(supp_ant / len(semantic_feature_representation), 3)
+        
+        supp_correct = len(semantic_feature_representation.loc[(semantic_feature_representation[col] == 1)  & (semantic_feature_representation["classification_check"] == "Correctly classified")])
+        percent_correct = round(supp_correct / supp_ant, 3)
+        concepts[col] = {"percent_present": percent_present, "percent_correct":percent_correct, "typicality":sf_stats[col]["cramers_value"]}
+
+        
+
+        # Compute concept info.
+        """
         # removes all columns that were the basic concepts without any joins (AND's) because the rules ensure that
         # only the rules which are relevant to us are kept, while the basic concepts are always present and should
         # be removed
@@ -285,6 +298,8 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
         # If there is nothing in the class, there is no relevant info so we remove it
         else:
             del concepts[col]
+
+        """
     return res
 
 
