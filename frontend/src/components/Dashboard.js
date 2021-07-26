@@ -473,7 +473,7 @@ export default function Dashboard(props) {
             </Row>
             <Modal size={'xl'} show={showModal} onHide={() => {setShowModal(false)}}      >
                         <Modal.Header closeButton closeLabel="close window">
-                        <h4>Details for {modalData["gt"]}</h4>
+                        <h4>Details for image of ground truth {modalData["gt"]}</h4>
                         </Modal.Header>
                         <Modal.Body>
                                 <div className="row">
@@ -613,7 +613,7 @@ export default function Dashboard(props) {
             </Row>
             <Modal size={'xl'} show={showModal} onHide={() => {setShowModal(false)}}      >
                         <Modal.Header closeButton closeLabel="close window">
-                        <h4>Details for {modalData["gt"]}</h4>
+                        <h4>Details for image of ground truth {modalData["gt"]}</h4>
                         </Modal.Header>
                         <Modal.Body>
                                 <div className="row">

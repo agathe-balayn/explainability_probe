@@ -545,6 +545,7 @@ def data_specific_explanations(request):
         list_concepts, l_struct, s_stat = query_all_concepts_scores(request.data)
         if rule_setting == "STATS_S":
             # Merge previous data and new ones.
+            data = result
             for class_ in l_struct:
                 if class_ not in data.keys():
                     data[class_] = {}
