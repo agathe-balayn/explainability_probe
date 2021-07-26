@@ -75,7 +75,6 @@ def images_matrix(request):
         class_A = request.GET.get("classA")
         class_B = request.GET.get("classB")
         session_id = request.GET.get("session_id")
-        print(session_id)
     except KeyError:
         return Response("There was an error in the input parameters, not all of 'classA', 'classB' and 'session_id' "
                         "were properly included in the request.", status=status.HTTP_417_EXPECTATION_FAILED)
@@ -444,7 +443,6 @@ def query_scores(request):
 
     res = {"concepts": res_concept, "rules": res_rule}
     code = status.HTTP_200_OK
-    print(res)
     return Response(res, status=code)
 
 @api_view(['POST'])
@@ -467,14 +465,13 @@ def query_all(self):
 
     session = Sessions.objects.filter(id=self.data["session_id"])[0]
     exp = session.explanations.filter(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1])
-    print(exp)
     if len(exp) > 0:
         print("data already collected")
         data = exp.last()
         return Response(data.explanation_list, status=status.HTTP_200_OK)
     else:
         res, code = universal_query(self.data)
-        print(res)
+        print("explanations returned", res)
         exp = ExplanationSet(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1], explanation_list=res)
         exp.save()
         session.explanations.add(exp)
@@ -504,7 +501,6 @@ def data_specific_explanations(request):
     if len(exp) > 0:
         print("data already collected")
         data = exp.last()
-        print(data.explanation_list)
         return Response({"data": data.explanation_list})
     else:
         print("collect data")
