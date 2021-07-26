@@ -180,6 +180,16 @@ export default function Dashboard(props) {
         setShowModal(true);
     }
 
+    //Css classes of green-{0,1,2,3} will determine how well a prediction has been
+    const getGreenColorShade = (item) => (
+        `green-${Math.min(3, 5 - Math.ceil(item / 20))}`
+    )
+    
+    //Css classes of red-{0,1...13} will determine how well a prediction hasn't been
+    const getRedColorShade = (item) => (
+        `red-${Math.min(13, Math.ceil(item / 2 ))}`
+    )
+        
 
     const chartData = {
         labels: binaryLabels,
@@ -353,8 +363,7 @@ export default function Dashboard(props) {
     let [labelState, setLabelState] = useState(true);
     let [labels, setLabels] = useState(labels1);
     //Keep distinct values
-    if (chartData.labels[0] != chartData.labels[1]){
-
+   
     return (
         <div id={"entire-page"}>
             <div class={"errorDiv"}>
@@ -397,18 +406,19 @@ export default function Dashboard(props) {
                                         <tr>
                                             <th scope="row" className={"category"}>{categories[key1]}</th>
                                             {x.map((item, key2) => (
-                                                <td className={(key1 !== key2) ? "off-diagonal" : "diagonal-cell"} id={"elem" + item}>
-                                                    <div>
+                                                <td className={`${(key1 !== key2) ? `off-diagonal ${getRedColorShade(item)}` : `diagonal-cell ${getGreenColorShade(item)}`}`} id={"elem" + item}>
                                                         <button type={"button"} className={"button"} id={"elem" + item}
+                                                            style={{
+                                                                backgroundColor: "unset",
+                                                                border: "unset"
+                                                            }}
                                                             onClick={() => {
                                                                 getMatrixImages(key1, key2);
-                                                                // getScores(key1, key2);
                                                                 getBinaryData(key1, key2);
                                                             }}>{item}%
                                                             <br></br>
                                                             <span style={{"fontSize": "10px"}}>{absoluteData[key1][key2] + " / " + totalImages}</span>
                                                         </button>
-                                                    </div>
                                                 </td>
                                                 ) 
                                             )}
@@ -424,6 +434,7 @@ export default function Dashboard(props) {
                     <div className="quadrant" id={"quadrant1"}>
                         <h2 className={"quadrantTitle"}>Matrix Concepts</h2>
                         <div className="charts-concepts">
+                        {(chartData.labels[0] != chartData.labels[1]) &&
                             <div className={"charts"}>
                                 <Pie
                                     data = {{
@@ -438,146 +449,7 @@ export default function Dashboard(props) {
                                 <br></br>
                                 
                             </div>
-                            {
-                                columns.map(item => (
-                                    <>
-                                        {item.view}
-                                    </>
-                                ))
                             }
-                        </div>
-                        <br/>
-                            {
-                                <div>
-                                    {
-                                        concept_data_view.map(item => (
-                                            <>
-                                                {item.view}
-                                            </>
-                                        ))
-                                    }
-                                </div>
-                            }
-                    </div>
-                </Col>
-            </Row>
-
-            <Row>
-                <Col span={24}>
-                    <div className="py-2 pr-3">
-                        <div className="quadrant w-100">
-                            <QueryClassificationFormulas />
-                        </div>
-                    </div>
-                </Col>
-            </Row>
-            <Modal size={'xl'} show={showModal} onHide={() => {setShowModal(false)}}      >
-                        <Modal.Header closeButton closeLabel="close window">
-                        <h4>Details for image of ground truth {modalData["gt"]}</h4>
-                        </Modal.Header>
-                        <Modal.Body>
-                                <div className="row">
-                                    <div className="col-12">
-                                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"]})</p>
-                                    </div>
-                                </div>
-                                <div className="row">
-                                    <div className="col d-flex flex-column align-items-center">
-                                        <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
-                                        <p>original image</p>
-                                    </div>
-                                    <div className="col d-flex flex-column align-items-center">
-                                        <img src={'data:image/jpeg;base64,' + modalData["heatmap"]}></img>
-                                        <p>heatmap</p>
-                                    </div>
-                                </div>
-                            {
-                            modalData["annotations"] !== undefined && modalData["annotations"].length > 0 ?
-                            <>
-                            <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
-                            <ul style={{columns: 3}}>
-                                {modalData["annotations"].map(a => <li>{a}</li>)}
-                            </ul>
-                            </>
-                            :
-                            <h5>No annotated concepts for this image</h5>
-                        }
-                        </Modal.Body>
-            </Modal>
-        </div>
-    );}
-    else{
-        
-    return (
-        <div id={"entire-page"}>
-            <div class={"errorDiv"}>
-            </div>
-            <Row>
-                <Col span={12}>
-                    <div className="quadrant">
-                        <div>
-                            <h2 className={"quadrantTitle"}>Confusion Matrix</h2>
-                            <button id={"switchDashboard"} onClick={() => {
-                                setLabelState(!labelState);
-                                setLabels(switchLabel(labels));
-                                transpose(relativeData);
-                                transpose(absoluteData);
-                            }}>Switch between Prediction and Truth values</button>
-
-                            <p id={"horizontal-label"}>{labels[0]}</p>
-                            <div className={"table-label"}>
-                                <p id={"vertical-label"}>{labels[1]}</p>
-                                {/*td = the blank cell in the top left corner*/}
-                                <table className='Matrix-header'>
-                                    {/*F1 score above matrix*/}
-                                    {
-                                        <tr>
-                                            <th className={"f1score"}><em>F1 Score</em></th>
-                                            {f1_scores.map(item => (
-                                                <th className={"f1score"} scope="col" key={item}><em>{item}</em></th>
-                                            ))}
-                                        </tr>
-                                    }
-
-                                    {/*Matrix data comes below*/}
-                                    <tr>
-                                        <td className={'Empty-cell'} id={"elem0"}/>
-                                        {categories.map(item => (
-                                            <th className={"category"} scope="col" key={item.id}>{item}</th>
-                                        ))}
-                                    </tr>
-                                    {relativeData.map((x, key1) => (
-                                        <tr>
-                                            <th scope="row" className={"category"}>{categories[key1]}</th>
-                                            {x.map((item, key2) => (
-                                                <td className={(key1 !== key2) ? "off-diagonal" : "diagonal-cell"} id={"elem" + item}>
-                                                    <div>
-                                                        <button type={"button"} className={"button"} id={"elem" + item}
-                                                            onClick={() => {
-                                                                getMatrixImages(key1, key2);
-                                                                // getScores(key1, key2);
-                                                                getBinaryData(key1, key2);
-                                                            }}>{item}%
-                                                            <br></br>
-                                                            <span style={{"fontSize": "10px"}}>{absoluteData[key1][key2] + " / " + totalImages}</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                ) 
-                                            )}
-                                        </tr>
-                                    ))}
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </Col>
-
-                <Col span={12}>
-                    <div className="quadrant" id={"quadrant1"}>
-                        <h2 className={"quadrantTitle"}>Matrix Concepts</h2>
-                        <div className="charts-concepts">
-                           
                             {
                                 columns.map(item => (
                                     <>
@@ -646,5 +518,4 @@ export default function Dashboard(props) {
             </Modal>
         </div>
     );
-    }
 }

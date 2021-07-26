@@ -111,6 +111,17 @@ export default function ConfusionMatrix(props) {
        }
     }
 
+    //Css classes of green-{0,1,2,3} will determine how well a prediction has been
+    const getGreenColorShade = (item) => (
+        `green-${Math.min(3, 5 - Math.ceil(item / 20))}`
+    )
+    
+    //Css classes of red-{0,1...13} will determine how well a prediction hasn't been
+    const getRedColorShade = (item) => (
+        `red-${Math.min(13, Math.ceil(item / 2 ))}`
+    )
+        
+
     // Add the data into the matrix only once the page is loaded because of [0].
     useEffect(() => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
@@ -158,7 +169,7 @@ export default function ConfusionMatrix(props) {
                         <tr>
                             <th scope="row">{categories[key1]}</th>
                             {x.map((item, key2) => (key1 !== key2) ? (
-                                <td className={"off-diagonal"} id={"elem" + item}>
+                                <td className={`off-diagonal ${getRedColorShade(item)}`} id={"elem" + item}>
                                     <div>
                                         <Link className={"link"} to={{
                                             pathname: "/classification/" + categories[key1] + "/" + categories[key2],
@@ -183,7 +194,7 @@ export default function ConfusionMatrix(props) {
                                     </div>
                                 </td>
                                 ) : (
-                                    <td className={"diagonal-cell"} id={"elem" + item}>
+                                    <td className={`${getGreenColorShade(item)} diagonal-cell`} id={"elem" + item}>
                                         <div>
                                             <Link className={"link"} to={{
                                                 pathname: "/correct-classification/" + categories[key1] + "/" + categories[key2],
