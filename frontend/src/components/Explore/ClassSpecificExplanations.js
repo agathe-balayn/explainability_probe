@@ -45,6 +45,7 @@ function ClassSpecificExplanations() {
           });
 
           // Run a second time with more complete explanations.
+          /*
           axios
           .post(data_specific_explanations_more_complete_url,
           JSON.stringify({ IMAGE_SET_SETTING: image_setting, "session_id" : session_id, "RULE_SETTING": rule_computation }), {
@@ -66,6 +67,7 @@ function ClassSpecificExplanations() {
             e.innerHTML = "Something went retrieving the statistics. Try again later. Consult the documentation if necessary."
             errorDiv.appendChild(e)
           });
+          */
     };
 
 
@@ -269,7 +271,7 @@ function ClassSpecificExplanations() {
                 <Radio value={"alphabetical"}>Alphabetical order</Radio><br/>
                 <Radio value={"confidence"}>Confidence</Radio><br/>
                 <Radio value={"typicality"}>Typicality</Radio><br/>
-                <Radio value={"present_percentage"}>Percentage of rule-associated images among idataset</Radio><br/>
+                <Radio value={"present_percentage"}>Percentage of rule-associated images among dataset</Radio><br/>
                 <Radio value={"present_percentage_antecedent"}>Percentage of concept-associated images among images with the predicted class</Radio><br/>
                 <Radio value={"correct_percentage"}>Percentage of correctly classified images within rule-associated images</Radio><br/>
             </RadioGroup>

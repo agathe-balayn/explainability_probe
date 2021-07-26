@@ -511,11 +511,14 @@ def get_rules(semantic_feature_representation,
     print("starting the frequent itemsets bit")
     df = pd.DataFrame(te_ary, columns=te.columns_)
     print("run a priori")
-    print((df.values == True).sum()
-)
-    frequent_itemsets = apriori(df,
+    #print((df.values == True).sum())
+    print(df.shape)
+    try:
+        frequent_itemsets = apriori(df,
                                 min_support=min_support_score,
                                 use_colnames=True)
+    except:
+        print("did not compute rules with a priori...")
     #if len(frequent_itemsets) > 10000:
     #print(frequent_itemsets)
     # Keep itemsets with labels, and a number of others.
@@ -716,7 +719,6 @@ def get_rules(semantic_feature_representation,
     #              & (rules['confidence'] > 0.1) &
     #              (rules['lift'] > 0.1)]
 
-    print("Data mining rules: ", rules)
     return rules, frequent_itemsets
 
 if __name__ == "__main__":

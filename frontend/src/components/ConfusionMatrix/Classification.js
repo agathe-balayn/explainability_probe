@@ -171,23 +171,30 @@ export default function Classification(props) {
             typicality: conceptTypicality[key]['typicality']
         });
     }
-
+    console.log("rule1")
+    console.log(ruleTypicality)
     const rule_data = [];
     for (let key in ruleTypicality) {
-        let innerArray = [];
+        
         for (let innerKey in ruleTypicality[key]) {
-            innerArray.push({
+            //let innerArray = [];
+            rule_data.push({
                 concept: (key) + " -> " + innerKey,
                 percentage_present: ruleTypicality[key][innerKey]['percent_present'],
                 percentage_correct: ruleTypicality[key][innerKey]['percent_correct'],
                 typicality: ruleTypicality[key][innerKey]['typicality']
             });
+            //rule_data.push({
+            //concept: key,
+            //innerArray: innerArray
+        //});
         }
-        rule_data.push({
-            concept: key,
-            innerArray: innerArray
-        });
+        
     }
+    console.log("concept")
+    console.log(concept_data)
+    console.log("rule2")
+    console.log(rule_data)
 
     sort(concept_data, sorting);
 
@@ -261,28 +268,28 @@ export default function Classification(props) {
     sort(rule_data, sorting);
     if (settingClasses == "binary"){
         for (let i = 0; i < rule_data.length; i++) {
-            for (let e = 0; e < rule_data[i].innerArray.length; e++) {
+            //for (let e = 0; e < rule_data[i].innerArray.length; e++) {
                 rule_data_view.push({
                     view:
                         <div className={"ruleRow" + (i%2).toString()}>
                                 <h5>
-                                    {rule_data[i].innerArray[e].concept}
+                                    {rule_data[i].concept}
                                 </h5>
                                 <div className="totalBar">
-                                    <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
-                                    <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
+                                    <div className="typicality" style={{width: (size * rule_data[i].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
+                                    <div className="typicalityText">typicality: {rule_data[i].typicality.toFixed(2)}</div>
                                 </div>
 
                                 <div>
-                                    <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
-                                    {(rule_data[i].innerArray[e].percentage_correct * 100).toFixed(2).toString() + "%"}
+                                    <div className="ruleCorrectBar" style={{width: (size * rule_data[i].percentage_correct * rule_data[i].percentage_present).toString() + "px", backgroundColor: "#7CFC00"}}>
+                                    {(rule_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
                                     </div>
 
-                                    <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                    <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].percentage_present - rule_data[i].percentage_correct * rule_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
                                     </div>
 
-                                    <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
-                                    {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
+                                    <div className="restBar" style={{width: (size * (1 - (rule_data[i].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                    {(rule_data[i].percentage_present * 100).toFixed(2).toString() + "%"}
                                     </div>
                                 </div>
                                 
@@ -290,27 +297,27 @@ export default function Classification(props) {
                                 </br>
                             </div>
                 })
-            }
+            //}
         }
     }else{
         for (let i = 0; i < rule_data.length; i++) {
-            for (let e = 0; e < rule_data[i].innerArray.length; e++) {
+            //for (let e = 0; e < rule_data[i].innerArray.length; e++) {
                 rule_data_view.push({
                     view:
                         <div className={"ruleRow" + (i%2).toString()}>
                                 <h5>
-                                    {rule_data[i].innerArray[e].concept}
+                                    {rule_data[i].concept}
                                 </h5>
                                 <div className="totalBar">
-                                    <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
-                                    <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
+                                    <div className="typicality" style={{width: (size * rule_data[i].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
+                                    <div className="typicalityText">typicality: {rule_data[i].typicality.toFixed(2)}</div>
                                 </div>
 
                                 <div>
                                     
 
-                                    <div className="restBar" style={{width: (size * ((rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
-                                    {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}
+                                    <div className="restBar" style={{width: (size * ((rule_data[i].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
+                                    {(rule_data[i].percentage_present * 100).toFixed(2).toString() + "%"}
                                     </div>
                                 </div>
                                 
@@ -318,7 +325,7 @@ export default function Classification(props) {
                                 </br>
                             </div>
                 })
-            }
+            //}
         }
     }
 
@@ -479,7 +486,7 @@ export default function Classification(props) {
                                     <h4> </h4>
                                     <div className={"main-wrap"}>
                                         <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
-                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
+                                        <p style={{color:"#556B2F"}}>Percentage of rule-associated images in dataset</p>
                                     </div>
                                     <hr/>
                                     <div>
@@ -585,7 +592,7 @@ export default function Classification(props) {
                                     <h2>Significant rules in the images within this binary task</h2>
                                     <h4> </h4>
                                     <div className={"main-wrap"}>
-                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images among images with the predicted class</p>
+                                        <p style={{color:"#556B2F"}}>Percentage of rule-associated images in dataset</p>
                                     </div>
                                     <hr/>
                                     <div>

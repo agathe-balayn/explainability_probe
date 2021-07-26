@@ -242,4 +242,5 @@ def calculate_f1_scores(session_id):
         predicted.append(image.predicted_image)
 
     calculated_f1_score = f1_score(category, predicted, average=None)
+    calculated_f1_score = [round(f1, 3) for f1 in calculated_f1_score]
     return calculated_f1_score, status.HTTP_200_OK
