@@ -8,7 +8,7 @@ const RadioGroup = Radio.Group;
 
 function OverallExplanations() {
   const size = 300;
-  const [image_setting, set_image_setting] = useState(["ALL_IMAGES"]);
+  const [image_setting, set_image_setting] = useState("ALL_IMAGES");
   const [concept_data, set_concept_data] = useState({});
   const [table_data, set_table_data] = useState([]);
   const [sorting, setSorting] = useState("typicality");
