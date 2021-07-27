@@ -10,7 +10,9 @@ class QuerySpecificImage extends React.Component {
         numConcepts: 0,
         imageSet: 1,
         images: [],
-        session_id : JSON.parse(sessionStorage.getItem("session"))
+        session_id : JSON.parse(sessionStorage.getItem("session")),
+        session_image_count: 0,
+        correct_images: 0
     }
 
     changeImageSet = (e) => {
@@ -138,13 +140,16 @@ class QuerySpecificImage extends React.Component {
             )
             .then(r => {
                 document.getElementById("loadingInfo").innerHTML = ""
-                if(r['data'].length == 0){
+                if(r['data']['image_data'].length == 0){
                     this.setState({
-                        images: -1
+                        images: -1,
+                        session_image_count: 0
                     })
                 }else{
                     this.setState({
-                        images:r['data']
+                        images:r['data']['image_data'],
+                        session_image_count:r['data']['image_count'],
+                        correct_images: r['data']['correctly_classified_images']
                     })
                 }
 
@@ -160,10 +165,17 @@ class QuerySpecificImage extends React.Component {
     render() {
 
         let images_view = []
+        let statistical_info = []
         if(this.state.images == -1){
             document.getElementById("loadingInfo").innerHTML = "There were no images available"
         }else{
             if(this.state.images.length > 0){
+                statistical_info.push(
+                    <tr>
+                        <th>Statistical information on the queried images</th>
+                        <th>values</th>
+                    </tr>
+                )
                 images_view.push(
                     <tr>
                         <th>true class</th>
@@ -173,19 +185,64 @@ class QuerySpecificImage extends React.Component {
                         <th>saliency map</th>
                     </tr>)
             }
+            
             for(let i = 0; i < this.state.images.length; i++){
-                images_view.push(
+                if(this.state.images[i]['classification_check'] == 'Correctly classified'){
+                    images_view.push(
+                        <tr>
+                            <td>{this.state.images[i]['true_class']}</td>
+                            <td>{this.state.images[i]['predicted_class']}</td>
+                            <td>{this.state.images[i]['rules'].substring(0, this.state.images[i]['rules'].length-2)}</td>
+                            <td>
+                                <img src={'data:image/jpeg;base64,' + this.state.images[i]['image']} alt={"image of" + this.state.images[i]['true_class']} class={'trueImage'}/>
+                            </td>
+                            <td>
+                                <img src={'data:image/jpeg;base64,' + this.state.images[i]['saliency_map']} alt={"image of" + this.state.images[i]['true_class']} class={'trueImage'}/>
+                            </td>
+                        </tr>
+                    )
+                }
+
+                else{
+                    images_view.push(
+                        <tr>
+                            <td>{this.state.images[i]['true_class']}</td>
+                            <td>{this.state.images[i]['predicted_class']}</td>
+                            <td>{this.state.images[i]['rules'].substring(0, this.state.images[i]['rules'].length-2)}</td>
+                            <td>
+                                <img src={'data:image/jpeg;base64,' + this.state.images[i]['image']} alt={"image of" + this.state.images[i]['true_class']} class={'incorrectImage'}/>
+                            </td>
+                            <td>
+                                <img src={'data:image/jpeg;base64,' + this.state.images[i]['saliency_map']} alt={"image of" + this.state.images[i]['true_class']} class={'incorrectImage'}/>
+                            </td>
+                        </tr>
+                    )
+                }
+
+            }
+
+            if(this.state.session_image_count > 0) {
+                statistical_info.push(
                     <tr>
-                        <td>{this.state.images[i]['true_class']}</td>
-                        <td>{this.state.images[i]['predicted_class']}</td>
-                        <td>{this.state.images[i]['rules'].substring(0, this.state.images[i]['rules'].length-2)}</td>
-                        <td>
-                            <img src={'data:image/jpeg;base64,' + this.state.images[i]['image']} alt={"image of" + this.state.images[i]['true_class']}/>
-                        </td>
-                        <td>
-                            <img src={'data:image/jpeg;base64,' + this.state.images[i]['saliency_map']} alt={"image of" + this.state.images[i]['true_class']}/>
-                        </td>
-                    </tr>)
+                        <td>Images found</td>
+                        <td>{this.state.images.length}</td>
+                    </tr>
+                )
+
+                statistical_info.push(
+                    <tr>
+                        <td>Total images in dataset</td>
+                        <td>{this.state.session_image_count}</td>
+                    </tr>
+                )
+
+                statistical_info.push(
+                    <tr>
+                        <td>Fraction of correctly attributed images</td>
+                        <td>{this.state.correct_images} / {this.state.images.length}</td>
+                    </tr>
+                )
+
             }
         }
 
@@ -271,6 +328,10 @@ class QuerySpecificImage extends React.Component {
                 </div>
                 <Button onClick={this.getImages}>show images</Button>
                 <p id={"loadingInfo"}/>
+                <table>
+                    {statistical_info}
+                </table>
+                <p>  </p>
                 <table>
                     {images_view}
                 </table>

@@ -144,7 +144,7 @@ def add_image(request):
     - image_data -> The images that will be saved to the new directory
     :return: a string and a status code responding if the additions were done successfully or not.
     """
-    parent_dir = os.path.join(Path(__file__).resolve().parent, "images")
+    parent_dir = os.path.join(Path(__file__).resolve().parent, "matrix_images/images")
 
     data_name = request.data["dataset_name"]
     image_data = request.data["image_data"]
@@ -275,10 +275,15 @@ def query_specific_images(request):
     session_id = request.data['session_id']
     session = Sessions.objects.filter(id=session_id)
     dir = os.path.join(Path(__file__).resolve().parent,
-                       "images/" + session[0].name)
+                       "matrix_images/images/" + session[0].name)
+
+    correct_images = 0
     for idx, row in res[res["filter_concepts"] == 1].iterrows():
+        if row['classification_check'] == 'Correctly classified':
+            correct_images += 1
         obj = {'predicted_class': row["predicted_label"]}
         obj['image_name'] = row["image_name"]
+
         with open(os.path.join(dir, "ppp_" + row["image_name"]), "rb") as image:
             img = image.read()
             img = base64.b64encode(img).decode('utf-8')
@@ -292,6 +297,7 @@ def query_specific_images(request):
         obj['true_class'] = row["true_label"]
         obj['rules'] = ""
         editedResult.append(obj)
+
     for i in editedResult:
         image = Images.objects.filter(image_name=i['image_name'])
         list_annot = []
@@ -301,7 +307,12 @@ def query_specific_images(request):
         for elem in  list(set(list_annot)):
             i['rules'] += elem + ", "
     #print(editedResult)
-    return Response(editedResult, code)
+    
+    res = {'image_data': editedResult,
+           'image_count': Sessions.objects.filter(id=session_id)[0].images.all().count(),
+           'correctly_classified_images': correct_images}
+
+    return Response(res, code)
     
     """
     print(res['rules'])

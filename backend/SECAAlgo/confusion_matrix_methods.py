@@ -93,7 +93,7 @@ def get_matrix_images(class_A, class_B, session_id):
                status.HTTP_417_EXPECTATION_FAILED
 
     path_images = os.path.join(
-        Path(__file__).resolve().parent, "images/" + predictions.name)
+        Path(__file__).resolve().parent, "matrix_images/images/" + predictions.name)
 
     A_classified_as_A = {
         "images": [],
