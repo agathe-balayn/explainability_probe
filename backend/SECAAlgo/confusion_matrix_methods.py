@@ -94,6 +94,8 @@ def get_matrix_images(class_A, class_B, session_id):
 
     path_images = os.path.join(
         Path(__file__).resolve().parent, "images/" + predictions.name)
+    print("-----------",path_images)
+    print(images)
 
     A_classified_as_A = {
         "images": [],
@@ -123,10 +125,13 @@ def get_matrix_images(class_A, class_B, session_id):
 
     for row in images:
         cat = row.actual_image
+
         pre = row.predicted_image
+        print(cat, pre, row.confidence)
         image_name = row.image_name
-        confidence = json.loads(row.confidence.replace("\'", "\""))[pre]
+        confidence = row.confidence#json.loads(row.confidence) #.replace("\'", "\""))[pre]
         annotations = set(row.annotations_set.values_list('annotation'))
+        print(row.annotations_set, annotations)
 
         if cat == class_A and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -158,7 +163,7 @@ def get_matrix_images(class_A, class_B, session_id):
             
             A_classified_as_B["confidence"].append(confidence)
             if len(annotations) > 0:
-                A_classified_as_B["annotations"] = annotations
+                A_classified_as_B["annotations"].append(annotations)
 
         elif cat == class_B and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -190,6 +195,7 @@ def get_matrix_images(class_A, class_B, session_id):
             if len(annotations) > 0:
                 B_classified_as_B["annotations"] = annotations   
 
+
         ### Stop when we have 10 images of each ---otherwise too slow.
         # If we're on the diagonal, we don't need as many.
         #if class_A == class_B:
@@ -199,7 +205,11 @@ def get_matrix_images(class_A, class_B, session_id):
         #else:
         #    if (len(A_classified_as_A["images"]) > 10) and (len(B_classified_as_B["images"]) > 10) and (len(A_classified_as_B["images"]) > 10) and (len(B_classified_as_A["images"]) > 10):
         #        break
-    print(class_A, class_B)   
+    print(class_A, class_B) 
+    print(A_classified_as_A["annotations"])
+    print(A_classified_as_B["annotations"])
+    print(B_classified_as_A["annotations"])
+    print(B_classified_as_B["annotations"])  
     if class_A == class_B:
         return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,

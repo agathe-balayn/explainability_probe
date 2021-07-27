@@ -29,6 +29,8 @@ import os
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
+
 
 
 # These are the views relating to the confusion matrix
@@ -892,4 +894,35 @@ def get_f1(request):
                         status.HTTP_417_EXPECTATION_FAILED)
 
     f1_score, status = calculate_f1_scores(session_id)
+    print("f1", f1_score)
     return Response(f1_score, status=status)
+
+
+@api_view(['post'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([
+    TokenAuthentication,
+])
+def get_accuracy(request):
+    try:
+        session_id = request.data['session_id']
+
+    except KeyError:
+        return Response({"response": "There was no valid session id included in the request"},
+                        status.HTTP_417_EXPECTATION_FAILED)
+
+    try:
+        predictions = Sessions.objects.filter(id=session_id)[0]
+
+    except ValueError:
+        return {"There is no prediction set for the session id: ": session_id}, status.HTTP_417_EXPECTATION_FAILED
+
+    category = []
+    predicted = []
+
+    for image in predictions.images.all():
+        category.append(image.actual_image)
+        predicted.append(image.predicted_image)
+
+    
+    return Response(round(accuracy_score(category, predicted), 3), status=status.HTTP_200_OK)

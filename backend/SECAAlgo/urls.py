@@ -3,7 +3,7 @@ from rest_framework import routers
 from .views import confusion_matrix, query_db, all_images_from_problem_view, data_all_images, query_all, \
     query_concepts_and_rules, data_overall_explanations, data_specific_explanations, data_specific_explanations_more_complete, \
     query_specific_images, images_matrix, NotesView, add_data, add_image, get_predictions, \
-    get_f1, query_concept_matrix, query_scores
+    get_f1, get_accuracy, query_concept_matrix, query_scores
 
 
 
@@ -38,4 +38,5 @@ urlpatterns = [
     path('add_image/', add_image, name="add_image_matrix"),
 
     path('f1_scores/', get_f1, name="f1_score_matrix"),
+    path('accuracy_scores/', get_accuracy, name="accuracy_score_matrix"),
 ]

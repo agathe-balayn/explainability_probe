@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import "../../css/ConfusionMatrix.less";
 import {Row, Col, Collapse, Radio} from "antd";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {f1 as f1_url, matrix_data as matrix_data_url} from "../../API";
+import {f1 as f1_url, accuracy as accuracy_url, matrix_data as matrix_data_url} from "../../API";
 
 export default function ConfusionMatrix(props) {
 
@@ -19,6 +19,7 @@ export default function ConfusionMatrix(props) {
     );
     const session_id = useState(JSON.parse(sessionStorage.getItem("session")))
     let [f1_scores, setF1_scores] = useState([]);
+    let [accuracy_scores, setAccuracy_scores] = useState([]);
     const getMatrixData = (event) => {
 
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
@@ -80,6 +81,35 @@ export default function ConfusionMatrix(props) {
             });
     }
 
+    const getAccuracy = () => {
+        const errorDiv = document.getElementsByClassName("errorDiv")[0];
+
+        axios
+            .post(
+                accuracy_url,
+                {
+                    "session_id": session_id[0]
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Token " + token,
+                    }
+                })
+            .then(response => {
+                    setAccuracy_scores(response.data)
+                }
+            )
+            .catch(function (error) {
+                const e = document.createElement("div")
+                e.innerHTML = "Something went wrong when retrieving the accuracy scores. Try again later."
+                e.className = "error"
+                errorDiv.appendChild(e)
+
+                setAccuracy_scores([]);
+            });
+    }
+
     let labels1 = ["Prediction", "Ground Truth"]
     let [labelState, setLabelState] = useState(true);
     let [labels, setLabels] = useState(labels1);
@@ -117,6 +147,7 @@ export default function ConfusionMatrix(props) {
         errorDiv.innerHTML = ""
         getMatrixData()
         getF1()
+        getAccuracy()
     }, [0]);
 
     return (
@@ -125,7 +156,7 @@ export default function ConfusionMatrix(props) {
             <h2>Confusion Matrix</h2>
             <p>Select the cells of the confusion matrix to get more information on the rules and concepts behind
                 the correlation of the ground truth and the prediction. In each cell, the upper percentage value is relative either to the ground truth or the absolute prediction.</p>
-
+            <p> Overall accuracy: {accuracy_scores} </p>
             <button id={"switch"} onClick={() => {
                 setLabelState(!labelState);
                 setLabels(switchLabel(labels));
@@ -183,7 +214,7 @@ export default function ConfusionMatrix(props) {
                                     </div>
                                 </td>
                                 ) : (
-                                    <td className={"diagonal-cell"} id={"elem" + item}>
+                                    <td bgcolor={"green"} className={"diagonal-cell"} id={"elem" + item}>
                                         <div>
                                             <Link className={"link"} to={{
                                                 pathname: "/correct-classification/" + categories[key1] + "/" + categories[key2],
