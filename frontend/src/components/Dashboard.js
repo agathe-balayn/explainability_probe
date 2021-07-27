@@ -89,7 +89,15 @@ export default function Dashboard(props) {
 
             })
             .then(response => {
-                setMatrixImages(response.data)
+                if (categories[row] != categories[column]){
+                    setMatrixImages(response.data)
+                }else{
+                    var dict_ = {}
+                    dict_[categories[row] + "_classified_as_" + categories[column]] = response.data[categories[row] + "_classified_as_" + categories[column]]
+                
+                    setMatrixImages(dict_)
+                }
+                
             })
             .catch(function (error) {
                 const e = document.createElement("div")
