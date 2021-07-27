@@ -144,7 +144,7 @@ export default function ConfusionMatrix(props) {
                 transpose(absoluteData);
             }}>Switch between Prediction and Truth values</button>
             <p id={"horizontal-label"}>{labels[0]}</p>
-            <div className={"table-label"}>
+            <div className="table-label pr-4 pb-4 overflow-auto">
                 <p id={"vertical-label"}>{labels[1]}</p>
                 {/*td = the blank cell in the top left corner*/}
                 
