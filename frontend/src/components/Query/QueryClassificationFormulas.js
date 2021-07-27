@@ -473,12 +473,17 @@ class QueryClassificationFormulas extends React.Component {
         for(let i = 0 ; i < this.state.confusion_matrix; i++){
             confusionMatrix = []
             confusionMatrix.push(<div>
+                <p id={"horizontal-label"}>Predicted label</p>
+                <div className={"table-label"}>
+                <p id={"vertical-label"}>Ground truth labels</p>
                 <table className='Matrix-header'>
+                    
                     <tr>
                         <td className={'Empty-cell'}/>
                         {this.state.classes.map(item => (
                             <th className={'Header-cell'} scope="col" key={item.id}>{item}</th>))}
                     </tr>
+
                     {this.state.rel_matrix.map((x, key1) => (
 
                         <tr>
@@ -506,6 +511,7 @@ class QueryClassificationFormulas extends React.Component {
                         </tr>
                     ))}
                 </table>
+                </div>
             <p>Legend: Top figure: frequency of concept among data samples in the cell, Bottom figure: frequency of concept among entire dataset</p> 
             
             </div>
@@ -544,7 +550,8 @@ class QueryClassificationFormulas extends React.Component {
                 concept: this.state.concept_typicality[key]['concept_name'],
                 percentage_present: this.state.concept_typicality[key]['percent_present'],
                 percentage_correct: this.state.concept_typicality[key]['percent_correct'], 
-                typicality: this.state.concept_typicality[key]['typicality']
+                typicality: this.state.concept_typicality[key]['typicality'],
+                percentage_incorrect: 1 - this.state.concept_typicality[key]['percent_correct']
             });
         }
 
@@ -561,7 +568,8 @@ class QueryClassificationFormulas extends React.Component {
                     concept: this.state.rule_typicality[key][innerKey]['rule_name'],
                     percentage_present: this.state.rule_typicality[key][innerKey]['percent_present'],
                     percentage_correct: this.state.rule_typicality[key][innerKey]['percent_correct'],
-                    typicality: this.state.rule_typicality[key][innerKey]['typicality']
+                    typicality: this.state.rule_typicality[key][innerKey]['typicality'],
+                    percentage_incorrect: 1- this.state.rule_typicality[key][innerKey]['percent_correct']
                 });
             }
             rule_data.push({
@@ -594,6 +602,7 @@ class QueryClassificationFormulas extends React.Component {
 
                             <div className="conceptIncorrectBar"
                                  style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                 {(concept_data[i].percentage_incorrect * 100).toFixed(2).toString() + "%"}
                             </div>
 
                             <div className="restBar"
@@ -632,6 +641,7 @@ class QueryClassificationFormulas extends React.Component {
                                 </div>
 
                                 <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct * rule_data[i].innerArray[e].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                {(rule_data[i].innerArray[e].percentage_incorrect * 100).toFixed(2).toString() + "%"}
                                 </div>
 
                                 <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>

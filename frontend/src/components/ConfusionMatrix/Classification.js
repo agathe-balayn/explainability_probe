@@ -168,7 +168,8 @@ export default function Classification(props) {
             concept: key,
             percentage_present: conceptTypicality[key]['percent_present'],
             percentage_correct: conceptTypicality[key]['percent_correct'],
-            typicality: conceptTypicality[key]['typicality']
+            typicality: conceptTypicality[key]['typicality'],
+            percentage_incorrect: 1 -conceptTypicality[key]['percent_correct']
         });
     }
     console.log("rule1")
@@ -182,7 +183,8 @@ export default function Classification(props) {
                 concept: (key) + " -> " + innerKey,
                 percentage_present: ruleTypicality[key][innerKey]['percent_present'],
                 percentage_correct: ruleTypicality[key][innerKey]['percent_correct'],
-                typicality: ruleTypicality[key][innerKey]['typicality']
+                typicality: ruleTypicality[key][innerKey]['typicality'],
+                percentage_incorrect: 1 - ruleTypicality[key][innerKey]['percent_correct'],
             });
             //rule_data.push({
             //concept: key,
@@ -221,6 +223,7 @@ export default function Classification(props) {
 
                                 <div className="conceptIncorrectBar"
                                      style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct * concept_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                     {(concept_data[i].percentage_incorrect * 100).toFixed(2).toString() + "%"}
                                 </div>
 
                                 <div className="restBar"
@@ -286,6 +289,7 @@ export default function Classification(props) {
                                     </div>
 
                                     <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].percentage_present - rule_data[i].percentage_correct * rule_data[i].percentage_present)).toString() + "px", backgroundColor: "#FF0000"}}>
+                                    {(rule_data[i].percentage_incorrect * 100).toFixed(2).toString() + "%"}
                                     </div>
 
                                     <div className="restBar" style={{width: (size * (1 - (rule_data[i].percentage_present))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
