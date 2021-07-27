@@ -373,7 +373,6 @@ export default function Classification(props) {
     }
     const fetchData = (event) => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
-        console.log(settingClasses);
         axios
             .post(
                 binary_query_url,
@@ -393,10 +392,12 @@ export default function Classification(props) {
 
             )
             .then(response => {
+                console.log("collected data")
                 setConceptTypicality(response.data['concepts']);
                 setRuleTypicality(response.data['rules']);
             })
             .catch(function (error) {
+                console.log("data not found")
 
                 const e = document.createElement("div")
                 e.innerHTML = "Something went wrong when retrieving the typicality scores. Try again later."

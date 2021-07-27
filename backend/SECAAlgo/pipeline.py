@@ -510,7 +510,6 @@ def perform_rule_mining(structured_representation, max_antecedent_length, min_su
     #print("len modified rep", (modified_representation))
     #print("consequent", list_consequents)
     # extract rules (this method takes the longest time)
-
     rules, frequent_itemsets = get_rules(modified_representation, min_support_score,
                                          min_lift_score, min_confidence_score, list_antecedents=list_antecedents, list_consequents=list_consequents)
     #print("output", rules)

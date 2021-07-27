@@ -468,6 +468,7 @@ def query_all(self):
     if len(exp) > 0:
         print("data already collected")
         data = exp.last()
+        print(data.explanation_list)
         return Response(data.explanation_list, status=status.HTTP_200_OK)
     else:
         res, code = universal_query(self.data)

@@ -22,6 +22,7 @@ export default function CorrectClassification(props) {
         JSON.parse(sessionStorage.getItem("token"))
     );
 
+    /*
     const getScores = (event) => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
 
@@ -32,7 +33,8 @@ export default function CorrectClassification(props) {
                     "query_type": "rules",
                     "image_setting": "binary_matrix",
                     "add_class": [binaryMatrixClasses[0], binaryMatrixClasses[1]],
-                    "session_id": session_id[0]
+                    "session_id": session_id[0],
+                    "task_type": "binary"
                 },
                 {
                     headers: {
@@ -57,6 +59,7 @@ export default function CorrectClassification(props) {
                 setRuleTypicality([]);
             });
     };
+    */
 
     const getMatrixImages = (event) => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
@@ -90,10 +93,11 @@ export default function CorrectClassification(props) {
     useEffect(() => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
         errorDiv.innerHTML = ""
-        getScores();
+        //getScores();
         getMatrixImages();
     }, [0] );
 
+    /*
     let concept_data = [];
     for (let key in conceptTypicality) {
         concept_data.push({
@@ -120,7 +124,9 @@ export default function CorrectClassification(props) {
             innerArray: innerArray
         });
     }
+    */
 
+    /*
 
     const size = 475;
     const concept_data_view = [];
@@ -182,6 +188,7 @@ export default function CorrectClassification(props) {
             })
         }
     }
+    */
 
     const columns = []
     let height = 0;

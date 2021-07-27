@@ -513,6 +513,7 @@ def get_rules(semantic_feature_representation,
     print("run a priori")
     #print((df.values == True).sum())
     print(df.shape)
+    print(df.columns)
     try:
         frequent_itemsets = apriori(df,
                                 min_support=min_support_score,
