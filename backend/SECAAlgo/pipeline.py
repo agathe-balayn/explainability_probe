@@ -1109,8 +1109,10 @@ def getScoresForOneVsALL(semantic_features_dict_list, structured_representation_
                 confidence = round(supp_ant_cons / supp_ant , 3)
             else:
                 confidence = 0
-
-            percent_present_antecedent = supp_ant_cons / supp_cons
+            if supp_cons == 0:
+                percent_present_antecedent = 0.0
+            else:
+                percent_present_antecedent = supp_ant_cons / supp_cons
 
             #data[class_name][concept] = 2
             #data[class_name][concept] = (percent_present, confidence, percent_present, percent_correct)

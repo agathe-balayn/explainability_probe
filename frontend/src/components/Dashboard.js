@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Pie } from "react-chartjs-2";
-import {binary_query, f1 as f1_url} from "../API";
+import {binary_query, f1 as f1_url, accuracy as accuracy_url} from "../API";
 import { matrix_images as matrix_images_url } from "../API";
 import { matrix_data as matrix_data_url } from "../API";
 import {Row, Col, Collapse, Radio} from "antd";
@@ -29,6 +29,7 @@ export default function Dashboard(props) {
     let [binaryLabels, setBinaryLabels] = useState([]);
     let [sorting, setSorting] = useState("concept");
     let [f1_scores, setF1_scores] = useState([]);
+    let [accuracy_scores, setAccuracy_scores] = useState([]);
     //State functions to control the modal overlays
     const [showModal, setShowModal] = useState(false);
     const [modalData, setModalData] = useState([]);
@@ -165,6 +166,34 @@ export default function Dashboard(props) {
                 errors.appendChild(e)
 
                 setF1_scores([]);
+            });
+    }
+
+    const getAccuracy = () => {
+        const errors = document.getElementsByClassName("errorDiv")[0]
+        axios
+            .post(
+                accuracy_url,
+                {
+                    "session_id": session_id[0]
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Token " + token
+                    },
+                }
+            )
+            .then(response => {
+                setAccuracy_scores(response.data)
+            })
+            .catch(function (error) {
+                const e = document.createElement("div")
+                e.className = "error"
+                e.innerHTML = "Something went wrong when retrieving the accuracy scores, please try again."
+                errors.appendChild(e)
+
+                setAccuracy_scores([]);
             });
     }
 
@@ -329,6 +358,7 @@ export default function Dashboard(props) {
         // getMatrixImages(1, 2);
         // getScores(1, 2); // Attempt to already have 1 cell selected
         getF1()
+        getAccuracy()
     }, [0]);
 
 
@@ -373,6 +403,7 @@ export default function Dashboard(props) {
                     <div className="quadrant">
                         <div>
                             <h2 className={"quadrantTitle"}>Confusion Matrix</h2>
+                            <div><p> Overall accuracy: {accuracy_scores} </p></div>
                             <button id={"switchDashboard"} onClick={() => {
                                 setLabelState(!labelState);
                                 setLabels(switchLabel(labels));

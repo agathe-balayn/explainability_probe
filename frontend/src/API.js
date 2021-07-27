@@ -19,6 +19,7 @@ const notes_url = domain + "api/SECAAlgo/notes"
 const expert_questions_url = domain + "api/Expert/questions/"
 const get_all_predicitons_url = domain + "api/SECAAlgo/UserProfile/predictions"
 const f1 = domain + "api/SECAAlgo/f1_scores/"
+const accuracy = domain + "api/SECAAlgo/accuracy_scores/"
 const get_sessions_url = domain + "api/UserSECA/get_sessions"
 const add_image_url = domain + "api/SECAAlgo/add_image/"
 const add_data_url = domain + "api/SECAAlgo/add_data/"
@@ -46,6 +47,7 @@ export {
   expert_questions_url,
   get_all_predicitons_url,
   f1,
+  accuracy,
   get_sessions_url,
   add_image_url,
   add_data_url,
