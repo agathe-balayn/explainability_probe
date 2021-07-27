@@ -849,7 +849,6 @@ def query_rules(input):
                                                             only_true_class=only_true_class,
                                                             only_predicted_class=only_predicted_class,
                                                             session_id=session_id, task_type=task_setting)
-        print(res)
         return res, stat
 
 

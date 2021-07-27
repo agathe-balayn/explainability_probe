@@ -226,14 +226,19 @@ def get_concept_and_rule_classifications(semantic_feature_representation, sf_sta
     for col in semantic_feature_representation.columns:
         if col == "image_name" or col == "true_label" or col == "predicted_label" or col == "classification_check":
             continue
-
+        
         supp_ant = len(semantic_feature_representation.loc[(semantic_feature_representation[col] == 1) ])
         percent_present =  round(supp_ant / len(semantic_feature_representation), 3)
         
         supp_correct = len(semantic_feature_representation.loc[(semantic_feature_representation[col] == 1)  & (semantic_feature_representation["classification_check"] == "Correctly classified")])
         percent_correct = round(supp_correct / supp_ant, 3)
         concepts[col] = {"percent_present": percent_present, "percent_correct":percent_correct, "typicality":sf_stats[col]["cramers_value"]}
-
+        classes = list(set(semantic_feature_representation["predicted_label"]))
+        
+        class_presence_dict = {}
+        for class_ in classes:
+            class_presence_dict["presence_among_" + class_] = round(len(semantic_feature_representation.loc[(semantic_feature_representation[col] == 1)  & (semantic_feature_representation["predicted_label"] == class_)])/len(semantic_feature_representation.loc[(semantic_feature_representation["predicted_label"] == class_) ]), 3)
+        concepts[col]["class_presence"] = class_presence_dict
         
 
         # Compute concept info.
@@ -1305,6 +1310,8 @@ def execute_rule_mining_pipeline(image_set_setting, return_setting="CONCEPTS_AND
     for for_element_to_remove in or_exclude:
         if for_element_to_remove in filter_single_concepts:
             filter_single_concepts.remove(for_element_to_remove)
+
+    print("going to filter", filter_single_concepts)
     #print(structured_representation_rule_mining)
     if task_type == "4task":
         structured_representation["true_label"] = "correctly predicted " + structured_representation["true_label"]

@@ -95,8 +95,7 @@ def get_matrix_images(class_A, class_B, session_id):
 
     path_images = os.path.join(
         Path(__file__).resolve().parent, "images/" + predictions.name)
-    print("-----------",path_images)
-    print(images)
+    
 
     A_classified_as_A = {
         "images": [],
@@ -128,11 +127,9 @@ def get_matrix_images(class_A, class_B, session_id):
         cat = row.actual_image
 
         pre = row.predicted_image
-        print(cat, pre, row.confidence)
         image_name = row.image_name
         confidence = row.confidence#json.loads(row.confidence) #.replace("\'", "\""))[pre]
         annotations = set(row.annotations_set.values_list('annotation'))
-        print(row.annotations_set, annotations)
 
         if cat == class_A and pre == class_A:
             with open(os.path.join(path_images, image_name), "rb") as image:
@@ -207,18 +204,13 @@ def get_matrix_images(class_A, class_B, session_id):
         #else:
         #    if (len(A_classified_as_A["images"]) > 10) and (len(B_classified_as_B["images"]) > 10) and (len(A_classified_as_B["images"]) > 10) and (len(B_classified_as_A["images"]) > 10):
         #        break
-    print(class_A, class_B) 
-    print(A_classified_as_A["annotations"])
-    print(A_classified_as_B["annotations"])
-    print(B_classified_as_A["annotations"])
-    print(B_classified_as_B["annotations"])  
+     
     if class_A == class_B:
         nb_im = len(A_classified_as_A["annotations"])
         count_concepts = []
         for list_annotation in A_classified_as_A["annotations"]:
             count_concepts += list(list_annotation.copy())
         count_concepts = [item[0] for item in count_concepts]
-        print(count_concepts[0], type(count_concepts[0]))
         concept_list = ((sorted(Counter(count_concepts).items(), key=lambda item: item[1], reverse=True)))
         c_l = []
         for i in concept_list:

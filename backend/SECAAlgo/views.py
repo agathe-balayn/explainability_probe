@@ -467,14 +467,14 @@ def query_all(self):
 
     session = Sessions.objects.filter(id=self.data["session_id"])[0]
     exp = session.explanations.filter(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1])
-    if len(exp) > 0:
+    if len(exp) > 10000000:
         print("data already collected")
         data = exp.last()
         print(data.explanation_list)
         return Response(data.explanation_list, status=status.HTTP_200_OK)
     else:
         res, code = universal_query(self.data)
-        print("explanations returned", res)
+        #print("explanations returned", res)
         exp = ExplanationSet(type_explanation="concepts_rules", image_setting=self.data["image_setting"], task_setting=self.data["task_type"], classA=self.data["add_class"][0], classB=self.data["add_class"][1], explanation_list=res)
         exp.save()
         session.explanations.add(exp)

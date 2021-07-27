@@ -21,6 +21,7 @@ export default function Classification(props) {
     let colors = []; // for the charts
 
     let [sorting, setSorting] = useState("concept");
+    let [filtering, setFiltering] = useState("all");
     let [settingClasses, setSettingClasses] = useState("binary");
     let [ruleTypicality, setRuleTypicality] = useState([]);
     let [conceptTypicality, setConceptTypicality] = useState([]);
@@ -39,12 +40,10 @@ export default function Classification(props) {
         colors[i] = rand;
         total_images += comprehensiveView[i]
     }
-    console.log(total_images)
     let fraction_images = []
     for (let i = 0; i < comprehensiveView.length; i++) {
         fraction_images.push((comprehensiveView[i] / total_images).toFixed(2))
     }
-    console.log(fraction_images)
 
 
     // Inputs for charts
@@ -58,6 +57,12 @@ export default function Classification(props) {
             hoverOffset: 4,
         }]
     };
+    let list_labels = []
+    if (settingClasses == "binary"){
+        list_labels = [binaryLabel[0], binaryLabel[1]]
+    }else{
+        list_labels = [ "correctly predicted " +  binaryLabel[0], "correctly predicted " +  binaryLabel[1],  "incorrectly predicted " +  binaryLabel[0], "incorrectly predicted " +  binaryLabel[1]]
+    }
     const binaryData = {
         labels: [binaryLabel[0] + " predicted as " + binaryLabel[1], binaryLabel[1] + " predicted as " + binaryLabel[0], "correctly predicted " +  binaryLabel[0], "correctly predicted " +  binaryLabel[1]],
         datasets: [{
@@ -156,6 +161,7 @@ export default function Classification(props) {
         return array
     }
 
+
     // Retrieve them at the first load of the page because of [0].
     useEffect(() => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
@@ -172,7 +178,8 @@ export default function Classification(props) {
             percentage_present: conceptTypicality[key]['percent_present'],
             percentage_correct: conceptTypicality[key]['percent_correct'],
             typicality: conceptTypicality[key]['typicality'],
-            percentage_incorrect: 1 -conceptTypicality[key]['percent_correct']
+            percentage_incorrect: 1 -conceptTypicality[key]['percent_correct'],
+            class_presence: conceptTypicality[key]['class_presence']
         });
     }
 
@@ -188,8 +195,7 @@ export default function Classification(props) {
         setShowModal(true);
     }
 
-    console.log("rule1")
-    console.log(ruleTypicality)
+    
     const rule_data = [];
     for (let key in ruleTypicality) {
         
@@ -209,17 +215,75 @@ export default function Classification(props) {
         }
         
     }
-    console.log("concept")
-    console.log(concept_data)
-    console.log("rule2")
-    console.log(rule_data)
+    
+
+
+
+
+    // Function that sorts the entries in the fetched data.
+    function filter_concept(array, on) {
+        console.log("i am filtering on")
+        console.log(on)
+        const concept_data = []
+        for (let key in conceptTypicality) {
+            if (on == "all"){
+                concept_data.push({
+                    concept: key,
+                    percentage_present: conceptTypicality[key]['percent_present'],
+                    percentage_correct: conceptTypicality[key]['percent_correct'],
+                    typicality: conceptTypicality[key]['typicality'],
+                    percentage_incorrect: 1 -conceptTypicality[key]['percent_correct'],
+                    class_presence: conceptTypicality[key]['class_presence']
+                });
+            }else if (on == "cooccuring"){
+                let nb_more_than_zero = 0
+                for (let i in conceptTypicality[key]['class_presence']){
+                    if (conceptTypicality[key]['class_presence'][i] > 0){
+                        nb_more_than_zero += 1
+                    }
+                }
+                if (nb_more_than_zero > 1){
+                       concept_data.push({
+                        concept: key,
+                        percentage_present: conceptTypicality[key]['percent_present'],
+                        percentage_correct: conceptTypicality[key]['percent_correct'],
+                        typicality: conceptTypicality[key]['typicality'],
+                        percentage_incorrect: 1 -conceptTypicality[key]['percent_correct'],
+                        class_presence: conceptTypicality[key]['class_presence']
+                    }); 
+                }
+                
+
+            }else{
+                if (conceptTypicality[key]['class_presence']["presence_among_" + on] > 0){
+                    concept_data.push({
+                        concept: key,
+                        percentage_present: conceptTypicality[key]['percent_present'],
+                        percentage_correct: conceptTypicality[key]['percent_correct'],
+                        typicality: conceptTypicality[key]['typicality'],
+                        percentage_incorrect: 1 -conceptTypicality[key]['percent_correct'],
+                        class_presence: conceptTypicality[key]['class_presence']
+                    }); 
+                }
+
+            }
+        }
+        console.log("new data")
+        console.log(concept_data)
+        return concept_data
+    }
 
     sort(concept_data, sorting);
+    filter_concept(concept_data, filtering);
 
     const size = 400;
     const concept_data_view = [];
     if (settingClasses == "binary"){
         for (let i = 0; i < concept_data.length; i++) {
+            let class_presence_string = ""
+            for (let j in concept_data[i].class_presence) {
+                class_presence_string += ("(" +  j +": " + (concept_data[i].class_presence[j] * 100).toFixed(2) + "%) ").toString() 
+            }
             concept_data_view.push({
                 view:
                     <div className={"conceptRow" + (i % 2).toString()}>
@@ -246,6 +310,9 @@ export default function Classification(props) {
                                      style={{width: (size * (1 - (concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
                                      {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
                                 </div>
+                            </div><br></br>
+                            <div>{class_presence_string}
+
                             </div>
                             
                             
@@ -256,6 +323,10 @@ export default function Classification(props) {
         }
     }else{
         for (let i = 0; i < concept_data.length; i++) {
+            let class_presence_string = ""
+            for (let j in concept_data[i].class_presence) {
+                class_presence_string += ("(" +  j +": " + (concept_data[i].class_presence[j] *100).toFixed(2)+ "%) ").toString() 
+            }
             concept_data_view.push({
                 view:
                     <div className={"conceptRow" + (i % 2).toString()}>
@@ -274,6 +345,9 @@ export default function Classification(props) {
                                      style={{width: (size * ((concept_data[i].percentage_present ))).toString() + "px", backgroundColor: "#D3D3D3", float: "left"}}>
                                      {((concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}
                                 </div>
+                            </div><br></br>
+                            <div>{class_presence_string}
+
                             </div>
                             
                             
@@ -285,6 +359,7 @@ export default function Classification(props) {
     }
     const rule_data_view = [];
     sort(rule_data, sorting);
+
     if (settingClasses == "binary"){
         for (let i = 0; i < rule_data.length; i++) {
             //for (let e = 0; e < rule_data[i].innerArray.length; e++) {
@@ -438,7 +513,6 @@ export default function Classification(props) {
             });
     }
 
-    
 return (
     <div>
         <div className="backHeader">
@@ -469,6 +543,7 @@ return (
                         <div className="subtitle"><h1>Settings</h1></div>
                         <RadioGroup value={settingClasses} onChange={(event) => {
                             setSettingClasses(event.target.value);
+                            
 
                             
                         }}>
@@ -489,6 +564,23 @@ return (
                         }}
                     />
                     <p>Total images: {total_images}</p>
+                    <div className="sort">
+                        <div className="subtitle"><h1>Select information to view</h1></div>
+                        <RadioGroup value={filtering} onChange={(event) => {
+                            console.log("change in filters")
+                            console.log(event.target.value)
+                            setFiltering(event.target.value);
+                            filter_concept(concept_data, event.target.value);
+                        }}>
+                            <Radio value={"all"}>All</Radio><br/>
+                            <Radio value={"cooccuring"}>Co-occuring across predicted classes</Radio><br/>
+                            {list_labels.map(a => <Radio value={a}>{a}</Radio>)}
+                            
+                        </RadioGroup>
+                    </div>
+
+                    
+
                 </div>
 
                 <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
