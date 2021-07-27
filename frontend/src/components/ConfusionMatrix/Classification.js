@@ -3,6 +3,7 @@ import { Pie } from 'react-chartjs-2';
 import { Button, Radio } from "antd";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import Modal from 'react-bootstrap/Modal'
 import { matrix_images as matrix_images_url, binary_query as binary_query_url } from "../../API";
 import "../../css/Classification.less"
 const RadioGroup = Radio.Group;
@@ -27,6 +28,8 @@ export default function Classification(props) {
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
     );
+    const [showModal, setShowModal] = useState(false);
+    const [modalData, setModalData] = useState([]);
 
     // Randomly decide the category's color for the charts
     let total_images = 0
@@ -172,6 +175,19 @@ export default function Classification(props) {
             percentage_incorrect: 1 -conceptTypicality[key]['percent_correct']
         });
     }
+
+    const fillModalData = ( heatmap, image, annotations,gt,label,confidence) => {
+        setModalData({
+            "image": image,
+            "heatmap": heatmap,
+            "annotations" : annotations,
+            "gt": gt,
+            "label": label,
+            "confidence": confidence
+        });
+        setShowModal(true);
+    }
+
     console.log("rule1")
     console.log(ruleTypicality)
     const rule_data = [];
@@ -346,10 +362,19 @@ export default function Classification(props) {
     }
     for (let key in matrixImages) {
         const images = []
+        const [gt, label] = key.replace("_classified_as_"," ").split(" ");
         for (let image in matrixImages[key]["images"]) {
             images.push({
                 view:
-                    <div>
+                <div className="hover-click-pair d-flex align-items-center" onClick={() => 
+                    fillModalData(
+                        matrixImages[key]["heatmaps"][image],
+                        matrixImages[key]["images"][image],
+                        matrixImages[key]["annotations"][image],
+                        gt,
+                        label, 
+                        matrixImages[key]["confidence"][image] 
+                        ) }>
                         <img className="matrixImage"
                            src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}></img>
                         <img className="matrixImage"
@@ -413,219 +438,149 @@ export default function Classification(props) {
             });
     }
 
-    if (settingClasses == "binary"){
-        return (
+    
+return (
+    <div>
+        <div className="backHeader">
+            <Link className={"link"} to={{pathname: "/home?tab=3"}}>
+                <Button className="backButton">Back</Button>
+            </Link>
+        </div>
+        <div className="errorDiv">
+        </div>
+
+        <div className={"everything"}>
             <div>
-                <div className="backHeader">
-                    <Link className={"link"} to={{pathname: "/home?tab=3"}}>
-                        <Button className="backButton">Back</Button>
-                    </Link>
-                </div>
-                <div className="errorDiv">
-                </div>
-
-                <div className={"everything"}>
-                    <div>
-                        <div className={"chart"}>
-                            <div className="sort">
-                                <div className="subtitle"><h1>Order of representation</h1></div>
-                                <RadioGroup value={sorting} onChange={(event) => {
-                                    setSorting(event.target.value);
-                                    sort(concept_data, sorting);
-                                    sort(rule_data, sorting);
-                                }}>
-                                    <Radio value={"concept"}>Alphabetical order</Radio><br/>
-                                    <Radio value={"typicality"}>Typicality</Radio><br/>
-                                    <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
-                                    <Radio value={"percentage_present"}>Percentage of concept-associated images</Radio><br/>
-                                </RadioGroup>
-                            </div>
-                            <div className="sort">
-                                <div className="subtitle"><h1>Settings</h1></div>
-                                <RadioGroup value={settingClasses} onChange={(event) => {
-                                    setSettingClasses(event.target.value);
-
-                                    
-                                }}>
-                                    <Radio value={"binary"}>Binary task</Radio><br/>
-                                    <Radio value={"4task"}>Distinction between correct and incorrect predictions (4-class task)</Radio><br/>
-                                </RadioGroup>
-                                <Button onClick={fetchData}>Search</Button>
-                            </div>
-                            
-                            <Pie
-                                data={{
-                                    labels: binaryData.labels,
-                                    datasets: binaryData.datasets
-                                }}
-                                options = {{
-                                    radius: "70%",
-                                    maintainAspectRatio: true,
-                                }}
-                            />
-                            <p>Total images: {total_images}</p>
-                        </div>
-
-                        <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
-                            <div className={"main-wrap"}>
-                                <div className={"left"}>
-                                    <h2>Significant concepts in the images within this binary task</h2>
-                                    <div className={"main-wrap"}>
-                                        <p style={{color:"#32CD32"}}>Percentage of correct predictions among concept-associated images</p>
-                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
-                                    </div>
-                                    <hr/>
-                                    <div>
-                                        {
-                                            concept_data_view.map(item => (
-                                                <>
-                                                    {item.view}
-                                                </>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-
-                                <div className={"right"}>
-                                    <h2>Significant rules in the images within this binary task</h2>
-                                    <h4> </h4>
-                                    <div className={"main-wrap"}>
-                                        <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
-                                        <p style={{color:"#556B2F"}}>Percentage of rule-associated images in dataset</p>
-                                    </div>
-                                    <hr/>
-                                    <div>
-                                        {
-                                            rule_data_view.map(item => (
-                                                <>
-                                                    {item.view}
-                                                </>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div className={"chart"}>
+                    <div className="sort">
+                        <div className="subtitle"><h1>Order of representation</h1></div>
+                        <RadioGroup value={sorting} onChange={(event) => {
+                            setSorting(event.target.value);
+                            sort(concept_data, sorting);
+                            sort(rule_data, sorting);
+                        }}>
+                            <Radio value={"concept"}>Alphabetical order</Radio><br/>
+                            <Radio value={"typicality"}>Typicality</Radio><br/>
+                            <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
+                            <Radio value={"percentage_present"}>Percentage of concept-associated images</Radio><br/>
+                        </RadioGroup>
                     </div>
+                    <div className="sort">
+                        <div className="subtitle"><h1>Settings</h1></div>
+                        <RadioGroup value={settingClasses} onChange={(event) => {
+                            setSettingClasses(event.target.value);
 
-                    {/*Here the images will come */}
-                    <div className="under-charts">
-                        {
-                            columns.map(item => (
-                                <>
-                                    {item.view}
-                                </>
-                            ))
-                        }
+                            
+                        }}>
+                            <Radio value={"binary"}>Binary task</Radio><br/>
+                            <Radio value={"4task"}>Distinction between correct and incorrect predictions (4-class task)</Radio><br/>
+                        </RadioGroup>
+                        <Button onClick={fetchData}>Search</Button>
+                    </div>
+                    
+                    <Pie
+                        data={{
+                            labels: binaryData.labels,
+                            datasets: binaryData.datasets
+                        }}
+                        options = {{
+                            radius: "70%",
+                            maintainAspectRatio: true,
+                        }}
+                    />
+                    <p>Total images: {total_images}</p>
+                </div>
+
+                <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
+                    <div className={"main-wrap"}>
+                        <div className={"left"}>
+                            <h2>Significant concepts in the images within this binary task</h2>
+                            <div className={"main-wrap"}>
+                            {settingClasses == "binary" &&
+                            <p style={{color:"#32CD32"}}>Percentage of correct predictions among concept-associated images</p>
+                            }
+                                <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
+                            </div>
+                            <hr/>
+                            <div>
+                                {
+                                    concept_data_view.map(item => (
+                                        <>
+                                            {item.view}
+                                        </>
+                                    ))
+                                }
+                            </div>
+                        </div>
+
+                        <div className={"right"}>
+                            <h2>Significant rules in the images within this binary task</h2>
+                            <h4> </h4>
+                            <div className={"main-wrap"}>
+                            {settingClasses == "binary" &&
+                                <p style={{color:"#32CD32"}}>Percentage of correctly classified images within rule-associated images</p>
+                            }
+                                <p style={{color:"#556B2F"}}>Percentage of rule-associated images in dataset</p>
+                            </div>
+                            <hr/>
+                            <div>
+                                {
+                                    rule_data_view.map(item => (
+                                        <>
+                                            {item.view}
+                                        </>
+                                    ))
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        );
-    }else{
-        return (
-            <div>
-                <div className="backHeader">
-                    <Link className={"link"} to={{pathname: "/home?tab=3"}}>
-                        <Button className="backButton">Back</Button>
-                    </Link>
-                </div>
-                <div className="errorDiv">
-                </div>
 
-                <div className={"everything"}>
-                    <div>
-                        <div className={"chart"}>
-                            <div className="sort">
-                                <div className="subtitle"><h1>Order of representation</h1></div>
-                                <RadioGroup value={sorting} onChange={(event) => {
-                                    setSorting(event.target.value);
-                                    sort(concept_data, sorting);
-                                    sort(rule_data, sorting);
-                                }}>
-                                    <Radio value={"concept"}>Alphabetical order</Radio><br/>
-                                    <Radio value={"typicality"}>Typicality</Radio><br/>
-                                    <Radio value={"percentage_correct"}>Percentage of correct predictions</Radio><br/>
-                                    <Radio value={"percentage_present"}>Percentage of concept-associated images</Radio><br/>
-                                </RadioGroup>
-                            </div>
-                            <div className="sort">
-                                <div className="subtitle"><h1>Settings</h1></div>
-                                <RadioGroup value={settingClasses} onChange={(event) => {
-                                    setSettingClasses(event.target.value);
-
-                                    
-                                }}>
-                                    <Radio value={"binary"}>Binary task</Radio><br/>
-                                    <Radio value={"4task"}>Distinction between correct and incorrect predictions (4-class task)</Radio><br/>
-                                </RadioGroup>
-                                <Button onClick={fetchData}>Search</Button>
-                            </div>
-                            
-                            <Pie
-                                data={{
-                                    labels: binaryData.labels,
-                                    datasets: binaryData.datasets
-                                }}
-                                options = {{
-                                    radius: "70%",
-                                    maintainAspectRatio: true,
-                                }}
-                            />
-                            <p>Total images: {total_images}</p>
-                        </div>
-
-                        <div className={"left-of-charts"} style={{"minHeight": (800).toString() + "px"}}>
-                            <div className={"main-wrap"}>
-                                <div className={"left"}>
-                                    <h2>Significant concepts in the images within this binary task</h2>
-                                    <div className={"main-wrap"}>
-                                        <p style={{color:"#556B2F"}}>Percentage of concept-associated images in dataset</p>
-                                    </div>
-                                    <hr/>
-                                    <div>
-                                        {
-                                            concept_data_view.map(item => (
-                                                <>
-                                                    {item.view}
-                                                </>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-
-                                <div className={"right"}>
-                                    <h2>Significant rules in the images within this binary task</h2>
-                                    <h4> </h4>
-                                    <div className={"main-wrap"}>
-                                        <p style={{color:"#556B2F"}}>Percentage of rule-associated images in dataset</p>
-                                    </div>
-                                    <hr/>
-                                    <div>
-                                        {
-                                            rule_data_view.map(item => (
-                                                <>
-                                                    {item.view}
-                                                </>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/*Here the images will come */}
-                    <div className="under-charts">
-                        {
-                            columns.map(item => (
-                                <>
-                                    {item.view}
-                                </>
-                            ))
-                        }
-                    </div>
-                </div>
+            {/*Here the images will come */}
+            <div className="under-charts">
+                {
+                    columns.map(item => (
+                        <>
+                            {item.view}
+                        </>
+                    ))
+                }
             </div>
-        );
-    }
+        </div>
+        <Modal size={'xl'} show={showModal} onHide={() => { setShowModal(false) }}      >
+            <Modal.Header closeButton closeLabel="close window">
+                <h4>Details for image of ground truth {modalData["gt"]}</h4>
+            </Modal.Header>
+            <Modal.Body>
+                <div className="row">
+                    <div className="col-12">
+                        <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"]})</p>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col d-flex flex-column align-items-center">
+                        <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
+                        <p>original image</p>
+                    </div>
+                    <div className="col d-flex flex-column align-items-center">
+                        <img src={'data:image/jpeg;base64,' + modalData["heatmap"]}></img>
+                        <p>heatmap</p>
+                    </div>
+                </div>
+                {
+                    modalData["annotations"] !== undefined && modalData["annotations"].length > 0 ?
+                        <>
+                            <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
+                            <ul style={{ columns: 3 }}>
+                                {modalData["annotations"].map(a => <li>{a}</li>)}
+                            </ul>
+                        </>
+                        :
+                        <h5>No annotated concepts for this image</h5>
+                }
+            </Modal.Body>
+        </Modal>
+    </div>
+    );
 }

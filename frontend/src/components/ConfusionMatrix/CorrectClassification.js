@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "antd";
 import axios from "axios";
+import Modal from 'react-bootstrap/Modal'
 import { matrix_images as matrix_images_url, binary_query as binary_query_url } from "../../API";
 import "../../css/CorrectClassification.less";
 
@@ -21,45 +22,8 @@ export default function CorrectClassification(props) {
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
     );
-
-    /*
-    const getScores = (event) => {
-        const errorDiv = document.getElementsByClassName("errorDiv")[0];
-
-        axios
-            .post(
-                binary_query_url,
-                {
-                    "query_type": "rules",
-                    "image_setting": "binary_matrix",
-                    "add_class": [binaryMatrixClasses[0], binaryMatrixClasses[1]],
-                    "session_id": session_id[0],
-                    "task_type": "binary"
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json" ,
-                        Authorization: "Token " + token
-                    }
-                }
-            )
-            .then(response => {
-                    setConceptTypicality(response.data['concepts']);
-                    setRuleTypicality(response.data['rules']);
-                }
-            )
-            .catch(function (error) {
-
-                const e = document.createElement("div")
-                e.innerHTML = "Something went wrong when retrieving the typicality scores. Try again later."
-                e.className = "error"
-                errorDiv.appendChild(e)
-
-                setConceptTypicality([]);
-                setRuleTypicality([]);
-            });
-    };
-    */
+    const [showModal, setShowModal] = useState(false);
+    const [modalData, setModalData] = useState([]);
 
     const getMatrixImages = (event) => {
         const errorDiv = document.getElementsByClassName("errorDiv")[0];
@@ -97,98 +61,17 @@ export default function CorrectClassification(props) {
         getMatrixImages();
     }, [0] );
 
-    /*
-    let concept_data = [];
-    for (let key in conceptTypicality) {
-        concept_data.push({
-            concept: key,
-            percentage_present: conceptTypicality[key]['percent_present'],
-            percentage_correct: conceptTypicality[key]['percent_correct'] * conceptTypicality[key]['percent_present'],
-            typicality: conceptTypicality[key]['typicality']
+    const fillModalData = ( heatmap, image, annotations,gt,label,confidence) => {
+        setModalData({
+            "image": image,
+            "heatmap": heatmap,
+            "annotations" : annotations,
+            "gt": gt,
+            "label": label,
+            "confidence": confidence
         });
+        setShowModal(true);
     }
-
-    const rule_data = [];
-    for (let key in ruleTypicality) {
-        let innerArray = [];
-        for (let innerKey in ruleTypicality[key]) {
-            innerArray.push({
-                concept: innerKey,
-                percentage_present: ruleTypicality[key][innerKey]['percent_present'],
-                percentage_correct: ruleTypicality[key][innerKey]['percent_correct'] * ruleTypicality[key][innerKey]['percent_present'],
-                typicality: ruleTypicality[key][innerKey]['typicality']
-            });
-        }
-        rule_data.push({
-            concept: key,
-            innerArray: innerArray
-        });
-    }
-    */
-
-    /*
-
-    const size = 475;
-    const concept_data_view = [];
-    for (let i = 0; i < concept_data.length; i++) {
-        concept_data_view.push({
-            view:
-                <div className={"conceptRow" + (i%2).toString()}>
-                <h5>{concept_data[i].concept}</h5>
-                    <div className="totalBar">
-                        <div className="typicality" style={{width: (size * concept_data[i].typicality).toString() + "px"}}></div>
-                        <div className="typicalityText">typicality: {concept_data[i].typicality}</div>
-                    </div>
-
-                    <div>
-                        <div className="conceptCorrectBar" style={{width: (size * concept_data[i].percentage_correct).toString() + "px"}}>
-                            {(concept_data[i].percentage_correct * 100).toFixed(2).toString() + "%"}
-                        </div>
-
-                        <div className="conceptIncorrectBar" style={{width: (size * (concept_data[i].percentage_present - concept_data[i].percentage_correct)).toString() + "px"}}></div>
-                        <div className="restBar" style={{width: (size * (1 - (concept_data[i].percentage_present + concept_data[i].percentage_correct))).toString() + "px"}}></div>
-                    </div>
-                    <br></br>
-                    <div>
-                        <div className="percentageOfTotalBar" style={{width: (size * concept_data[i].percentage_present).toString() + "px"}}>
-                            {((concept_data[i].percentage_correct + concept_data[i].percentage_present) * 100).toFixed(2).toString() + "%"}</div>
-                        <div className="pointer"></div>
-                    </div>
-                    <br></br>
-                </div>
-        })
-    }
-
-    const rule_data_view = [];
-    for (let i = 0; i < rule_data.length; i++) {
-        for (let e = 0; e < rule_data[i].innerArray.length; e++) {
-            rule_data_view.push({
-                view:
-                    <div className={"ruleRow" + (i%2).toString()}>
-                        <h5>{rule_data[i].concept + " -> " + rule_data[i].innerArray[e].concept}</h5>
-                        <div className="totalBar">
-                            <div className="typicality" style={{width: (size * rule_data[i].innerArray[e].typicality).toFixed(2).toString() + "px", maxWidth: (size * 0.7).toString() + "px"}}></div>
-                            <div className="typicalityText">typicality: {rule_data[i].innerArray[e].typicality.toFixed(2)}</div>
-                        </div>
-
-                        <div>
-                            <div className="ruleCorrectBar" style={{width: (size * rule_data[i].innerArray[e].percentage_correct).toString() + "px"}}></div>
-                            <div className="ruleInCorrectBar" style={{width: (size * (rule_data[i].innerArray[e].percentage_present - rule_data[i].innerArray[e].percentage_correct)).toString() + "px"}}></div>
-
-                            <div className="restBar" style={{width: (size * (1 - (rule_data[i].innerArray[e].percentage_present + rule_data[i].innerArray[e].percentage_correct))).toString() + "px"}}></div>
-                        </div>
-                        <br></br>
-                        <div>
-                            <div className="percentageOfTotalBar" style={{width: (size * rule_data[i].innerArray[e].percentage_present).toString() + "px"}}>
-                                {(rule_data[i].innerArray[e].percentage_present * 100).toFixed(2).toString() + "%"}</div>
-                            <div className="pointer"></div>
-                        </div>
-                        <br></br>
-                    </div>
-            })
-        }
-    }
-    */
 
     const columns = []
     let height = 0;
@@ -199,11 +82,19 @@ export default function CorrectClassification(props) {
     }
     for (let key in matrixImages) {
         const images = []
-
+        const [gt, label] = key.replace("_classified_as_"," ").split(" ");
         for(let image in matrixImages[key]["images"]) {
             images.push({
                 view:
-                    <div>
+                <div className="hover-click-pair d-inline-flex m-4" onClick={() => 
+                    fillModalData(
+                        matrixImages[key]["heatmaps"][image],
+                        matrixImages[key]["images"][image],
+                        matrixImages[key]["annotations"][image],
+                        gt,
+                        label, 
+                        matrixImages[key]["confidence"][image] 
+                        ) }>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["heatmaps"][image]}></img>
                         <img className="matrixImage" src={'data:image/jpeg;base64,' + matrixImages[key]["images"][image]}></img>
                     </div>
@@ -252,6 +143,39 @@ export default function CorrectClassification(props) {
                     }
                 </div>
             </div>
+            <Modal size={'xl'} show={showModal} onHide={() => { setShowModal(false) }}      >
+                <Modal.Header closeButton closeLabel="close window">
+                    <h4>Details for image of ground truth {modalData["gt"]}</h4>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="row">
+                        <div className="col-12">
+                            <p>Classified as: {modalData["label"]} (Confidence: {modalData["confidence"]})</p>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col d-flex flex-column align-items-center">
+                            <img src={'data:image/jpeg;base64,' + modalData["image"]}></img>
+                            <p>original image</p>
+                        </div>
+                        <div className="col d-flex flex-column align-items-center">
+                            <img src={'data:image/jpeg;base64,' + modalData["heatmap"]}></img>
+                            <p>heatmap</p>
+                        </div>
+                    </div>
+                    {
+                        modalData["annotations"] !== undefined && modalData["annotations"].length > 0 ?
+                            <>
+                                <h5>Annotated concepts ({modalData["annotations"].length}):</h5>
+                                <ul style={{ columns: 3 }}>
+                                    {modalData["annotations"].map(a => <li>{a}</li>)}
+                                </ul>
+                            </>
+                            :
+                            <h5>No annotated concepts for this image</h5>
+                    }
+                </Modal.Body>
+            </Modal>
         </div>
     );
 }

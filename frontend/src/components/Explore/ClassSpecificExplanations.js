@@ -3,8 +3,9 @@ import 'antd/dist/antd.css';
 import '../../css/ClassSpecificExplanations.css';
 import axios from "axios";
 import {data_specific_explanations_url, data_specific_explanations_more_complete_url} from "../../API"
-
+import { Collapse } from 'antd';
 import { Radio, Slider, Button, Table } from "antd";
+const { Panel } = Collapse;
 const RadioGroup = Radio.Group;
 
 function ClassSpecificExplanations() {
@@ -184,29 +185,23 @@ function ClassSpecificExplanations() {
 
                     ruleString.push({
                         view:
-                            <p className={"ruleEntryP"}>
-                                <p className={"ruleEntry"}>
-                                    {sortedTable[rule] + ", "}
-                                </p>
-                                <div className={"hide"}>{subText}</div>
-                            </p>
+                            <>
+                            <span className={"ruleEntry"}>{sortedTable[rule] + ", "}</span>
+                            <span className={"hide"}>{subText}</span>
+                            </>
+                            
                     })
                 }
             }
             arr.push({section:
-                <div className={"tableEntry"}>
-                
-                    <h3>{key}</h3>
-                    
                     <div className={"ruleList"} id={"classDiv_" + key}>
                         {ruleString.map(item => (
                         <>
                            {item.view}
                         </>
                         ))}
-                    </div>
-                    
-                </div>
+                    </div>,
+                    entity: key
             })
 
         }
@@ -226,8 +221,16 @@ function ClassSpecificExplanations() {
       <p>In class specific explanations</p>
 
       <div className="leftSide">
-      <Table columns={columns} dataSource={data} />
-      </div>
+      <Collapse defaultActiveKey={['']}>
+      {data.map((x, i) => 
+      <Panel header={x.entity} key={i}>
+            <p>{x.section}</p>
+        </Panel>
+        
+        )}
+        </Collapse>
+        </div>
+
       <div className="rightSide">
         <div className="scores">
             <div className="subtitle"><h1>scores</h1></div>
@@ -245,7 +248,6 @@ function ClassSpecificExplanations() {
                 <Radio value={"correct_percentage"}>Percentage of correctly classified images within rule-associated images</Radio><br/>
 
             </RadioGroup>
-
         </div>
 
         <div className="filters">
