@@ -13,6 +13,7 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from sklearn.metrics import f1_score
+from collections import Counter
 
 
 def position(space, name):
@@ -148,6 +149,7 @@ def get_matrix_images(class_A, class_B, session_id):
             A_classified_as_A["confidence"].append(confidence)
             if len(annotations) > 0:
                 A_classified_as_A["annotations"].append(annotations)
+            #print(annotations, type(annotations))
 
 
         elif cat == class_A and pre == class_B:
@@ -211,8 +213,19 @@ def get_matrix_images(class_A, class_B, session_id):
     print(B_classified_as_A["annotations"])
     print(B_classified_as_B["annotations"])  
     if class_A == class_B:
+        nb_im = len(A_classified_as_A["annotations"])
+        count_concepts = []
+        for list_annotation in A_classified_as_A["annotations"]:
+            count_concepts += list(list_annotation.copy())
+        count_concepts = [item[0] for item in count_concepts]
+        print(count_concepts[0], type(count_concepts[0]))
+        concept_list = ((sorted(Counter(count_concepts).items(), key=lambda item: item[1], reverse=True)))
+        c_l = []
+        for i in concept_list:
+            c_l.append((i[0], round(i[1] / nb_im, 3)))
         return {
                f"{class_A}_classified_as_{class_A}": A_classified_as_A,
+               f"counter_concepts": c_l#sorted(Counter(count_concepts).items(), key=lambda item: item[1], reverse=True)
            }, status.HTTP_200_OK
     else:      
         return {

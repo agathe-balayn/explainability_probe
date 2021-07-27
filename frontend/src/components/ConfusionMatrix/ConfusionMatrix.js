@@ -167,7 +167,7 @@ export default function ConfusionMatrix(props) {
             <h2>Confusion Matrix</h2>
             <p>Select the cells of the confusion matrix to get more information on the rules and concepts behind
                 the correlation of the ground truth and the prediction. In each cell, the upper percentage value is relative either to the ground truth or the absolute prediction.</p>
-            <p> Overall accuracy: {accuracy_scores} </p>
+            <p> Overall accuracy: {accuracy_scores} -- Total number of images: {totalImages} </p>
             <button id={"switch"} onClick={() => {
                 setLabelState(!labelState);
                 setLabels(switchLabel(labels));
@@ -221,7 +221,7 @@ export default function ConfusionMatrix(props) {
                                                     [categories[key1], categories[key2]],
                                                     [absoluteData[key1][key2], absoluteData[key2][key1], absoluteData[key1][key1], absoluteData[key2][key2]]
                                                 ]
-                                        }} key={key1 + key2}>{absoluteData[key1][key2] + " / " + totalImages}</Link>
+                                        }} key={key1 + key2}>{(absoluteData[key1][key2] / totalImages * 100).toFixed(2)}%</Link>
                                     </div>
                                 </td>
                                 ) : (
@@ -260,7 +260,7 @@ export default function ConfusionMatrix(props) {
                                                             key1 < absoluteData.length - 1 ? absoluteData[key1 + 1][key2 + 1] : absoluteData[key1 - 1][key2 + 1]                                                      ],
                                                         [categories[key1], categories[key2]]
                                                     ]
-                                            }} key={key1 + key2}>{absoluteData[key1][key2] + " / " + totalImages}</Link>
+                                            }} key={key1 + key2}>{(absoluteData[key1][key2] / totalImages * 100).toFixed(2)}%</Link>
                                         </div>
                                     </td>
                                 )

@@ -403,7 +403,7 @@ export default function Dashboard(props) {
                     <div className="quadrant">
                         <div>
                             <h2 className={"quadrantTitle"}>Confusion Matrix</h2>
-                            <div><p> Overall accuracy: {accuracy_scores} </p></div>
+                            <div><p> Overall accuracy: {accuracy_scores}  -- Total number of images: {totalImages}  </p></div>
                             <button id={"switchDashboard"} onClick={() => {
                                 setLabelState(!labelState);
                                 setLabels(switchLabel(labels));
@@ -448,7 +448,7 @@ export default function Dashboard(props) {
                                                                 getBinaryData(key1, key2);
                                                             }}>{item}%
                                                             <br></br>
-                                                            <span style={{"fontSize": "10px"}}>{absoluteData[key1][key2] + " / " + totalImages}</span>
+                                                            <span style={{"fontSize": "10px"}}>{(absoluteData[key1][key2] / totalImages * 100).toFixed(2)}%</span>
                                                         </button>
                                                 </td>
                                                 ) 

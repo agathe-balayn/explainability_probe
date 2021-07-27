@@ -18,6 +18,7 @@ export default function CorrectClassification(props) {
     let [ruleTypicality, setRuleTypicality] = useState([]);
     let [conceptTypicality, setConceptTypicality] = useState([]);
     const [matrixImages, setMatrixImages] = useState([])
+    const [counter_concepts, setCounterConcepts] = useState({})
     const session_id = useState(JSON.parse(sessionStorage.getItem("session")))
     const [token, setToken] = useState(
         JSON.parse(sessionStorage.getItem("token"))
@@ -43,7 +44,13 @@ export default function CorrectClassification(props) {
                 }
             )
             .then(response => {
-                setMatrixImages(response.data)
+                var dict_ = {}
+                dict_[binaryMatrixClasses[0] + "_classified_as_" + binaryMatrixClasses[1]] = response.data[binaryMatrixClasses[0] + "_classified_as_" + binaryMatrixClasses[1]]
+                //console.log(response.data[binaryMatrixClasses[0] + "_classified_as_" + binaryMatrixClasses[1]])
+                setMatrixImages(dict_)
+                //{binaryMatrixClasses[0] + "_classified_as_" + binaryMatrixClasses[1]: response.data[binaryMatrixClasses[0] + "_classified_as_" + binaryMatrixClasses[1]]});
+                setCounterConcepts(response.data["counter_concepts"])
+                console.log(response.data)
             })
         .catch(function (error) {
             const e = document.createElement("div")
@@ -61,7 +68,7 @@ export default function CorrectClassification(props) {
         getMatrixImages();
     }, [0] );
 
-    const fillModalData = ( heatmap, image, annotations,gt,label,confidence) => {
+    const fillModalData = (heatmap, image, annotations, gt, label, confidence) => {
         setModalData({
             "image": image,
             "heatmap": heatmap,
@@ -80,6 +87,7 @@ export default function CorrectClassification(props) {
             height = matrixImages[key]["images"].length
         }
     }
+
     for (let key in matrixImages) {
         const images = []
         const [gt, label] = key.replace("_classified_as_"," ").split(" ");
@@ -100,7 +108,6 @@ export default function CorrectClassification(props) {
                     </div>
             })
         }
-
         columns.push({
             view:
                 <div className={"imageColumn"} style={{"width":"1450px"}}>
@@ -115,8 +122,22 @@ export default function CorrectClassification(props) {
                 </div>
         })
     }
+
+    const counters = []
+    for (let key in counter_concepts) {
+        console.log(key)
+            counters.push({
+                view:
+                <li> {counter_concepts[key][0]}: {counter_concepts[key][1]}
+                </li>
+
+            })
+        }
+    
+
+
     return (
-        <div>
+        <div >
             <div className="backHeader">
                 <Link className={"link"} to={{pathname: "/home?tab=3"}}>
                     <Button className="backButton">Back</Button>
@@ -176,6 +197,18 @@ export default function CorrectClassification(props) {
                     }
                 </Modal.Body>
             </Modal>
+            <div>
+             <h3>{"Concepts and their frequency in the present images"}</h3>
+             <ul>
+                    {
+                        counters.map(item => (
+                            <>
+                                {item.view}
+                            </>
+                        ))
+                    }
+                </ul>
+                </div>
         </div>
     );
 }
