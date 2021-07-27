@@ -193,7 +193,7 @@ def get_matrix_images(class_A, class_B, session_id):
 
             B_classified_as_B["confidence"].append(confidence)
             if len(annotations) > 0:
-                B_classified_as_B["annotations"] = annotations   
+                B_classified_as_B["annotations"].append(annotations)
 
 
         ### Stop when we have 10 images of each ---otherwise too slow.
