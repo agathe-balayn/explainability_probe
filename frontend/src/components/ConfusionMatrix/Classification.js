@@ -45,6 +45,8 @@ export default function Classification(props) {
         fraction_images.push((comprehensiveView[i] / total_images).toFixed(2))
     }
 
+    var concept_data = []
+
 
     // Inputs for charts
 
@@ -171,7 +173,7 @@ export default function Classification(props) {
         getMatrixImages();
     }, [0] );
 
-    const concept_data = []
+    
     for (let key in conceptTypicality) {
         concept_data.push({
             concept: key,
@@ -221,12 +223,11 @@ export default function Classification(props) {
 
 
     // Function that sorts the entries in the fetched data.
-    function filter_concept(array, on) {
+    const filter_concept = () => {
         console.log("i am filtering on")
-        console.log(on)
-        const concept_data = []
+        concept_data = []
         for (let key in conceptTypicality) {
-            if (on == "all"){
+            if (filtering == "all"){
                 concept_data.push({
                     concept: key,
                     percentage_present: conceptTypicality[key]['percent_present'],
@@ -235,7 +236,7 @@ export default function Classification(props) {
                     percentage_incorrect: 1 -conceptTypicality[key]['percent_correct'],
                     class_presence: conceptTypicality[key]['class_presence']
                 });
-            }else if (on == "cooccuring"){
+            }else if (filtering == "cooccuring"){
                 let nb_more_than_zero = 0
                 for (let i in conceptTypicality[key]['class_presence']){
                     if (conceptTypicality[key]['class_presence'][i] > 0){
@@ -255,7 +256,7 @@ export default function Classification(props) {
                 
 
             }else{
-                if (conceptTypicality[key]['class_presence']["presence_among_" + on] > 0){
+                if (conceptTypicality[key]['class_presence']["presence_among_" + filtering] > 0){
                     concept_data.push({
                         concept: key,
                         percentage_present: conceptTypicality[key]['percent_present'],
@@ -268,13 +269,11 @@ export default function Classification(props) {
 
             }
         }
-        console.log("new data")
-        console.log(concept_data)
-        return concept_data
+        console.log("new data" + concept_data)
     }
 
     sort(concept_data, sorting);
-    filter_concept(concept_data, filtering);
+    filter_concept();
 
     const size = 400;
     const concept_data_view = [];
@@ -570,7 +569,7 @@ return (
                             console.log("change in filters")
                             console.log(event.target.value)
                             setFiltering(event.target.value);
-                            filter_concept(concept_data, event.target.value);
+                            filter_concept();
                         }}>
                             <Radio value={"all"}>All</Radio><br/>
                             <Radio value={"cooccuring"}>Co-occuring across predicted classes</Radio><br/>
