@@ -49,10 +49,13 @@ def get_confusion_matrix_data(session_id):
             uniques = np.append(uniques, i)
 
     abs_matrix = [[0 for i in uniques] for j in uniques]
+    abs_matrix_transpose = [[0 for i in uniques] for j in uniques]
     rel_matrix = []
+    rel_matrix_transpose = []
 
     for prediction in predictions.images.all():
         abs_matrix[position(uniques, prediction.actual_image)][position(uniques, prediction.predicted_image)] += 1
+        abs_matrix_transpose[position(uniques, prediction.predicted_image)][position(uniques, prediction.actual_image)] += 1
 
     for row in abs_matrix:
         count = 0
@@ -62,12 +65,21 @@ def get_confusion_matrix_data(session_id):
             count = 1
         rel_matrix.append(np.round([100 * i / count for i in row], 2))
 
+    for row in abs_matrix_transpose:
+        count = 0
+        for i in row:
+            count += i
+        if count == 0:
+            count = 1
+        rel_matrix_transpose.append(np.round([100 * i / count for i in row], 2))
+
     total_images = predictions.images.all().count()
 
     return {
                "categories": uniques,
                "matrix (absolute)": abs_matrix,
                "matrix (relative)": rel_matrix,
+               "matrix (relative) transpose": rel_matrix_transpose,
                "num_images": total_images
            }, status.HTTP_200_OK
 
