@@ -1,13 +1,3 @@
-# Introduction to the project
-The group has been keeping track of all the meetings happening until this moment.
-For that we have been using Drive in order to add notes and questions dynamically.
-
-All the meetings can be found below:
-https://drive.google.com/drive/folders/1agKxomsME9cAEdLQK8WNHpH5U9p3_pDE?usp=sharing
-
-For more detailed information on the design processes, division of labour and 
-other explanations, please view the blackbox_project_report.pdf
-
 # Initial explanation
 
 In order to view the project, you need to run both the backend and the frontend. The following explains how to set up both. 
