@@ -1,4 +1,12 @@
-# Initial explanation
+# An explainability probe for identifying bugs in computer vision models
+
+
+## Demo
+A video presenting the Figma prototype created for this project is present at the following link: https://youtu.be/Fi2BcvlUnQc.
+
+
+
+# Setting up and running the design probe
 
 In order to view the project, you need to run both the backend and the frontend. The following explains how to set up both. 
 
